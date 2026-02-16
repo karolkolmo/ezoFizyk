@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biohaking i Neurohaking Człowieka - Inspirowane Krystianem Deferem</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .quantum-glow {
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(102, 126, 234, 0.8); }
+        }
+        
+        .quantum-particle {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .mind-wave {
+            background: linear-gradient(90deg, 
+                rgba(102, 126, 234, 0.2) 0%,
+                rgba(118, 75, 162, 0.4) 50%,
+                rgba(102, 126, 234, 0.2) 100%);
+            animation: wave 3s linear infinite;
+            background-size: 200% 100%;
+        }
+        
+        @keyframes wave {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+        
+        .glass-morphism {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .progress-ring {
+            transition: stroke-dashoffset 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        // Ikony SVG jako komponenty React
+        const Brain = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+        );
+        
+        const Zap = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+        );
+        
+        const Activity = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+            </svg>
+        );
+        
+        const Heart = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+        );
+        
+        const Eye = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+        );
+        
+        const Sparkles = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
+        );
+        
+        const BookOpen = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+        );
+        
+        const Target = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        );
+        
+        const TrendingUp = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+        );
+        
+        const Menu = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        );
+        
+        const X = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        );
+        
+        const ChevronRight = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+        );
+        
+        const Star = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+            </svg>
+        );
+        
+        const Check = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+        );
+        
+        const Moon = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+        );
+        
+        const Apple = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+        );
+        
+        const Pill = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+        );
+        
+        const Sun = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+        );
+
+        // Główny komponent aplikacji
+        function BiohakingApp() {
+            const [activeTab, setActiveTab] = useState('home');
+            const [userProgress, setUserProgress] = useState({
+                mentalTools: 0,
+                physicalPractices: 0,
+                quantumLevel: 0,
+                mindCondition: 50
+            });
+            const [selectedTool, setSelectedTool] = useState(null);
+            const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+            const tabs = [
+                { id: 'home', name: 'Start', icon: Sparkles },
+                { id: 'theory', name: 'Teoria', icon: BookOpen },
+                { id: 'tools', name: 'Narzędzia', icon: Brain },
+                { id: 'practices', name: 'Praktyki', icon: Activity },
+                { id: 'progress', name: 'Postępy', icon: TrendingUp }
+            ];
+
+            return (
+                <div className="min-h-screen pb-8">
+                    {/* Header */}
+                    <header className="glass-morphism text-white p-4 sticky top-0 z-50">
+                        <div className="max-w-7xl mx-auto flex justify-between items-center">
+                            <div className="flex items-center space-x-3">
+                                <div className="quantum-particle">
+                                    <Brain className="w-8 h-8" />
+                                </div>
+                                <div>
+                                    <h1 className="text-xl font-bold">Biohaking & Neurohaking</h1>
+                                    <p className="text-xs opacity-80">Inspirowane Krystianem Deferem</p>
+                                </div>
+                            </div>
+                            
+                            {/* Desktop Navigation */}
+                            <nav className="hidden md:flex space-x-2">
+                                {tabs.map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`px-4 py-2 rounded-lg transition flex items-center space-x-2 ${
+                                            activeTab === tab.id 
+                                                ? 'bg-white text-purple-600 quantum-glow' 
+                                                : 'hover:bg-white/20'
+                                        }`}
+                                    >
+                                        <tab.icon className="w-4 h-4" />
+                                        <span>{tab.name}</span>
+                                    </button>
+                                ))}
+                            </nav>
+
+                            {/* Mobile Menu Button */}
+                            <button 
+                                className="md:hidden"
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            >
+                                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                            </button>
+                        </div>
+
+                        {/* Mobile Navigation */}
+                        {mobileMenuOpen && (
+                            <nav className="md:hidden mt-4 space-y-2">
+                                {tabs.map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => {
+                                            setActiveTab(tab.id);
+                                            setMobileMenuOpen(false);
+                                        }}
+                                        className={`w-full px-4 py-3 rounded-lg transition flex items-center space-x-2 ${
+                                            activeTab === tab.id 
+                                                ? 'bg-white text-purple-600' 
+                                                : 'bg-white/10 hover:bg-white/20'
+                                        }`}
+                                    >
+                                        <tab.icon className="w-5 h-5" />
+                                        <span>{tab.name}</span>
+                                    </button>
+                                ))}
+                            </nav>
+                        )}
+                    </header>
+
+                    {/* Content */}
+                    <main className="max-w-7xl mx-auto mt-8 px-4">
+                        {activeTab === 'home' && <HomeTab />}
+                        {activeTab === 'theory' && <TheoryTab />}
+                        {activeTab === 'tools' && <ToolsTab selectedTool={selectedTool} setSelectedTool={setSelectedTool} />}
+                        {activeTab === 'practices' && <PracticesTab userProgress={userProgress} setUserProgress={setUserProgress} />}
+                        {activeTab === 'progress' && <ProgressTab userProgress={userProgress} />}
+                    </main>
+                </div>
+            );
+        }
+
+        // Zakładka Start
+        function HomeTab() {
+            return (
+                <div className="space-y-8">
+                    {/* Hero Section */}
+                    <div className="glass-morphism rounded-3xl p-8 md:p-12 text-white text-center quantum-glow">
+                        <div className="inline-block mb-6">
+                            <Brain className="w-20 h-20 quantum-particle" />
+                        </div>
+                        <h2 className="text-4xl md:text-5xl font-bold mb-4">
+                            Homo Sapiens Quantum
+                        </h2>
+                        <p className="text-xl md:text-2xl mb-8 opacity-90">
+                            Podróż do optymalizacji ciała, umysłu i świadomości
+                        </p>
+                        <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                            <StatCard icon={Brain} title="Neurohaking" value="Umysł" color="blue" />
+                            <StatCard icon={Activity} title="Biohaking" value="Ciało" color="green" />
+                            <StatCard icon={Sparkles} title="Kwantowość" value="Duch" color="purple" />
+                        </div>
+                    </div>
+
+                    {/* Intro Cards */}
+                    <div className="grid md:grid-cols-2 gap-6">
+                        <IntroCard 
+                            icon={BookOpen}
+                            title="Filozofia ezoFizyki"
+                            description="Poznaj koncepcję Poziomu Niemierzalnego i Mierzalnego, gdzie kwantowe procesy łączą się z ludzką świadomością."
+                            gradient="from-blue-500 to-purple-600"
+                        />
+                        <IntroCard 
+                            icon={Zap}
+                            title="Algorytm Kamień Filozoficzny"
+                            description="Odkryj autorskie mentalne narzędzie kwantowe Krystiana Defera do transformacji rzeczywistości."
+                            gradient="from-purple-500 to-pink-600"
+                        />
+                        <IntroCard 
+                            icon={Heart}
+                            title="Kondycja Umysłu"
+                            description="Naucz się praktycznych metod radzenia sobie z dystresem i optymalizacji pracy mózgu."
+                            gradient="from-pink-500 to-red-600"
+                        />
+                        <IntroCard 
+                            icon={Target}
+                            title="Praktyczny Biohaking"
+                            description="Kompleksowe podejście do optymalizacji ciała przez sen, odżywianie, ruch i suplementację."
+                            gradient="from-green-500 to-teal-600"
+                        />
+                    </div>
+
+                    {/* Cztery Filary */}
+                    <div className="glass-morphism rounded-2xl p-8 text-white">
+                        <h3 className="text-3xl font-bold mb-6 text-center">Cztery Filary Transformacji</h3>
+                        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <PillarCard number="1" title="Świadomość" description="Rozpoznanie własnego stanu i potencjału" />
+                            <PillarCard number="2" title="Narzędzia" description="Mentalne techniki kwantowe" />
+                            <PillarCard number="3" title="Praktyka" description="Codzienne działanie i konsekwencja" />
+                            <PillarCard number="4" title="Integracja" description="Połączenie ciała, umysłu i ducha" />
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Zakładka Teoria
+        function TheoryTab() {
+            const [expandedSection, setExpandedSection] = useState(null);
+
+            const theories = [
+                {
+                    id: 'ezofizyka',
+                    title: 'ezoFizyka - Nowa Fizyka Indeterministyczna',
+                    icon: Sparkles,
+                    content: `ezoFizyka łączy kwantową fizykę z duchowym wymiarem rzeczywistości. 
+                    Zakłada istnienie dwóch poziomów:
+                    
+                    • POZIOM NIEMIERZALNY - Źródłowy poziom rzeczywistości, gdzie działają procesy kwantowe
+                    • POZIOM MIERZALNY - Fizyczna manifestacja, świat materialny
+                    
+                    Splątanie kwantowe jest mostem między tymi poziomami, umożliwiając świadomości wpływ na rzeczywistość fizyczną.`
+                },
+                {
+                    id: 'wolna-wola',
+                    title: 'Wolna Wola jako Źródłowa Przyczyna Sprawcza',
+                    icon: Brain,
+                    content: `Według Krystiana Defera, Wolna Wola to elementarna Siła Natury, która może działać poprzez Poziom Niemierzalny.
+                    
+                    To oznacza, że świadome intencje mogą wpływać na kwantowe procesy, które następnie manifestują się w rzeczywistości fizycznej.
+                    
+                    To podstawa działania mentalnych Narzędzi Kwantowych.`
+                },
+                {
+                    id: 'algorytm',
+                    title: 'Algorytm Kamień Filozoficzny',
+                    icon: Zap,
+                    content: `Autorskie mentalne narzędzie kwantowe Krystiana Defera, które pozwala:
+                    
+                    • Świadomie wykorzystywać splątanie kwantowe
+                    • Działać z Poziomu Niemierzalnego
+                    • Przekształcać dystres w eustres
+                    • Uzdrawiać problemy życiowe w sensie kwantowym
+                    • Poprawiać kondycję umysłu
+                    
+                    W przeciwieństwie do intuicyjnej Metody Dwupunktowej, Algorytm działa świadomie i celowo.`
+                },
+                {
+                    id: 'kondycja',
+                    title: 'Kwantowa Kondycja Umysłu',
+                    icon: Activity,
+                    content: `Kondycja umysłu to stan psychiczny umożliwiający dobrą jakość życia niezależnie od zewnętrznych okoliczności.
+                    
+                    Obejmuje:
+                    • Odporność na dystres przewlekły
+                    • Koherencję serca i umysłu
+                    • Neuroplastyczność i adaptację
+                    • Równowagę emocjonalną
+                    • Jasność mentalną
+                    
+                    Mentalne Narzędzia Kwantowe służą do jej optymalizacji.`
+                },
+                {
+                    id: 'homo-quantum',
+                    title: 'Homo Sapiens Quantum - Nowa Era',
+                    icon: Star,
+                    content: `Żyjemy w czasach Homo Sapiens Quantum - człowieka świadomego kwantowych aspektów swojej egzystencji.
+                    
+                    To ewolucja od:
+                    • Intuicyjnego do świadomego działania
+                    • Reakcji do kreacji
+                    • Bierności do aktywnej transformacji rzeczywistości
+                    
+                    Biohaking i neurohaking to praktyczne narzędzia tej ewolucji.`
+                }
+            ];
+
+            return (
+                <div className="space-y-6">
+                    <div className="glass-morphism rounded-2xl p-8 text-white text-center mb-8">
+                        <BookOpen className="w-16 h-16 mx-auto mb-4 quantum-particle" />
+                        <h2 className="text-3xl font-bold mb-2">Teoretyczne Fundamenty</h2>
+                        <p className="text-lg opacity-90">Bazujące na pracach Krystiana Defera</p>
+                    </div>
+
+                    {theories.map((theory) => (
+                        <div key={theory.id} className="glass-morphism rounded-2xl overflow-hidden">
+                            <button
+                                onClick={() => setExpandedSection(expandedSection === theory.id ? null : theory.id)}
+                                className="w-full p-6 flex items-center justify-between text-white hover:bg-white/10 transition"
+                            >
+                                <div className="flex items-center space-x-4">
+                                    <theory.icon className="w-8 h-8" />
+                                    <h3 className="text-xl font-semibold text-left">{theory.title}</h3>
+                                </div>
+                                <ChevronRight className={`w-6 h-6 transition-transform ${expandedSection === theory.id ? 'rotate-90' : ''}`} />
+                            </button>
+                            
+                            {expandedSection === theory.id && (
+                                <div className="p-6 pt-0 text-white border-t border-white/20">
+                                    <p className="whitespace-pre-line leading-relaxed opacity-90">
+                                        {theory.content}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+
+                    {/* Cytaty */}
+                    <div className="glass-morphism rounded-2xl p-8 text-white">
+                        <h3 className="text-2xl font-bold mb-6 text-center">Kluczowe Cytaty</h3>
+                        <div className="space-y-4">
+                            <Quote text="Człowieka można zniszczyć, ale nie pokonać." />
+                            <Quote text="Wolna Wola jest elementarną Siłą Sprawczą, która może działać poprzez Poziom Niemierzalny." />
+                            <Quote text="Kondycja umysłu to patent na lepszą jakość życia bez względu na zewnętrzne okoliczności." />
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Zakładka Narzędzia Kwantowe
+        function ToolsTab({ selectedTool, setSelectedTool }) {
+            const tools = [
+                {
+                    id: 'filozoficzny',
+                    name: 'Algorytm Kamień Filozoficzny',
+                    category: 'Główne Narzędzie',
+                    description: 'Świadome wykorzystanie splątania kwantowego do transformacji rzeczywistości',
+                    icon: Sparkles,
+                    color: 'purple',
+                    steps: [
+                        'Osiągnij stan głębokiej świadomości',
+                        'Zdefiniuj wyraźną intencję',
+                        'Wizualizuj połączenie z Poziomem Niemierzalnym',
+                        'Zastosuj splątanie kwantowe poprzez koncentrację',
+                        'Obserwuj manifestację w rzeczywistości mierzalnej'
+                    ]
+                },
+                {
+                    id: 'koherencja',
+                    name: 'Kwantowa Medytacja Koherencji',
+                    category: 'Medytacja',
+                    description: 'Synchronizacja rytmów serca i umysłu na poziomie kwantowym',
+                    icon: Heart,
+                    color: 'pink',
+                    steps: [
+                        'Przyjmij wygodną pozycję siedząca',
+                        'Skoncentruj się na oddechu i rytmie serca',
+                        'Wizualizuj synchronizację fal mózgowych z biciem serca',
+                        'Utrzymuj stan koherencji przez 10-20 minut',
+                        'Powoli wróć do normalnego stanu świadomości'
+                    ]
+                },
+                {
+                    id: 'rezonans',
+                    name: 'Kwantowy Rezonans Bodźców',
+                    category: 'Sensoryka',
+                    description: 'Wykorzystanie bodźców wzrokowych i słuchowych dla wpływu na Poziom Niemierzalny',
+                    icon: Eye,
+                    color: 'blue',
+                    steps: [
+                        'Wybierz dźwięki o niskich częstotliwościach (432 Hz, 528 Hz)',
+                        'Dodaj wizualizacje geometryczne (mandala, święta geometria)',
+                        'Pozwól bodźcom rezonować z twoją świadomością',
+                        'Obserwuj zmiany w stanie mentalnym',
+                        'Kontynuuj przez 15-30 minut'
+                    ]
+                },
+                {
+                    id: 'dystres',
+                    name: 'Protokół Transformacji Dystresu',
+                    category: 'Zarządzanie Stresem',
+                    description: 'Przekształcanie dystresu przewlekłego w eustres',
+                    icon: Activity,
+                    color: 'green',
+                    steps: [
+                        'Rozpoznaj źródło dystresu',
+                        'Zastosuj Algorytm Kamień Filozoficzny',
+                        'Przeprogramuj reakcję na stresory',
+                        'Wzmocnij nowe wzorce poprzez powtarzanie',
+                        'Monitoruj poprawę kondycji umysłu'
+                    ]
+                },
+                {
+                    id: 'neuroplastycznosc',
+                    name: 'Kwantowa Neuroplastyczność',
+                    category: 'Neurohaking',
+                    description: 'Świadome przeprogramowanie struktur neuronalnych',
+                    icon: Brain,
+                    color: 'indigo',
+                    steps: [
+                        'Zidentyfikuj wzorce myślowe do zmiany',
+                        'Stwórz nowe ścieżki neuronalne poprzez wizualizację',
+                        'Wzmacniaj nowe połączenia przez praktykę',
+                        'Wykorzystaj stany zmienionej świadomości (medytacja)',
+                        'Obserwuj zmiany behawioralne'
+                    ]
+                }
+            ];
+
+            return (
+                <div className="space-y-6">
+                    <div className="glass-morphism rounded-2xl p-8 text-white text-center mb-8">
+                        <Brain className="w-16 h-16 mx-auto mb-4 quantum-particle" />
+                        <h2 className="text-3xl font-bold mb-2">Mentalne Narzędzia Kwantowe</h2>
+                        <p className="text-lg opacity-90">Praktyczne metody transformacji</p>
+                    </div>
+
+                    {!selectedTool ? (
+                        <div className="grid md:grid-cols-2 gap-6">
+                            {tools.map(tool => (
+                                <ToolCard 
+                                    key={tool.id}
+                                    tool={tool}
+                                    onClick={() => setSelectedTool(tool)}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <ToolDetails 
+                            tool={selectedTool} 
+                            onBack={() => setSelectedTool(null)}
+                        />
+                    )}
+                </div>
+            );
+        }
+
+        // Zakładka Praktyki
+        function PracticesTab({ userProgress, setUserProgress }) {
+            const [activePractice, setActivePractice] = useState(null);
+
+            const practices = [
+                {
+                    id: 'sleep',
+                    name: 'Optymalizacja Snu',
+                    category: 'Biohaking Fizyczny',
+                    icon: Moon,
+                    tips: [
+                        'Zachowaj regularny rytm dobowy (przed 23:00 do łóżka)',
+                        'Unikaj niebieskiego światła 2h przed snem',
+                        'Temperatura pokoju 16-19°C',
+                        'Całkowita ciemność (lub maska na oczy)',
+                        'Magnes 400mg, glicynian 3g przed snem',
+                        'Sen 7-9h dla optymalnej regeneracji'
+                    ]
+                },
+                {
+                    id: 'nutrition',
+                    name: 'Odżywianie Kwantowe',
+                    category: 'Biohaking Metaboliczny',
+                    icon: Apple,
+                    tips: [
+                        'Czas ograniczonego żywienia (16:8 lub 18:6)',
+                        'Dieta bogata w Omega-3 (ryby, orzechy)',
+                        'Antyoksydanty (jagody, zielona herbata)',
+                        'Probiotyki dla osi jelito-mózg',
+                        'Nawodnienie 30-40ml/kg masy ciała',
+                        'Eliminacja cukrów prostych i żywności przetworzonej'
+                    ]
+                },
+                {
+                    id: 'movement',
+                    name: 'Ruch i Aktywność',
+                    category: 'Biohaking Fizyczny',
+                    icon: Activity,
+                    tips: [
+                        'Trening HIIT 2-3x w tygodniu',
+                        'Siłowy 3-4x w tygodniu',
+                        'Codzienne 10,000 kroków minimum',
+                        'Joga lub stretching dla elastyczności',
+                        'Oddech Wima Hofa dla odporności',
+                        'Ekspozycja na zimno (zimne prysznice)'
+                    ]
+                },
+                {
+                    id: 'supplements',
+                    name: 'Suplementacja Neurotropowa',
+                    category: 'Neurohaking Biochemiczny',
+                    icon: Pill,
+                    tips: [
+                        'L-teanina + kofeina (focus)',
+                        'Omega-3 (EPA/DHA dla mózgu)',
+                        'Witamina D3 + K2',
+                        'Kompleks witamin B',
+                        'Adaptogeny (ashwagandha, rhodiola)',
+                        'NAD+ prekursory (NMN lub NR)'
+                    ]
+                },
+                {
+                    id: 'meditation',
+                    name: 'Praktyki Medytacyjne',
+                    category: 'Neurohaking Mentalny',
+                    icon: Brain,
+                    tips: [
+                        'Dzienna medytacja mindfulness 20 min',
+                        'Kwantowa koherencja serca-umysłu',
+                        'Wizualizacja twórcza',
+                        'Body scan dla świadomości ciała',
+                        'Loving-kindness meditation',
+                        'Praca z oddechem (pranayama)'
+                    ]
+                },
+                {
+                    id: 'light',
+                    name: 'Terapia Światłem',
+                    category: 'Biohaking Chronobiologiczny',
+                    icon: Sun,
+                    tips: [
+                        'Ekspozycja na naturalne światło rano (15-30 min)',
+                        'Red light therapy dla mitochondriów',
+                        'Unikanie niebieskiego światła wieczorem',
+                        'Używanie okularów blokujących niebieski po zachodzie',
+                        'Jasne światło w ciągu dnia dla rytmu dobowego',
+                        'Całkowita ciemność podczas snu'
+                    ]
+                }
+            ];
+
+            const completePractice = (practiceId) => {
+                setUserProgress(prev => ({
+                    ...prev,
+                    physicalPractices: Math.min(100, prev.physicalPractices + 5),
+                    mindCondition: Math.min(100, prev.mindCondition + 2)
+                }));
+            };
+
+            return (
+                <div className="space-y-6">
+                    <div className="glass-morphism rounded-2xl p-8 text-white text-center mb-8">
+                        <Activity className="w-16 h-16 mx-auto mb-4 quantum-particle" />
+                        <h2 className="text-3xl font-bold mb-2">Praktyki Codzienne</h2>
+                        <p className="text-lg opacity-90">Konkretne działania dla transformacji</p>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {practices.map(practice => (
+                            <PracticeCard 
+                                key={practice.id}
+                                practice={practice}
+                                onComplete={() => completePractice(practice.id)}
+                            />
+                        ))}
+                    </div>
+
+                    {/* Quick Actions */}
+                    <div className="glass-morphism rounded-2xl p-8 text-white">
+                        <h3 className="text-2xl font-bold mb-6">Szybkie Akcje</h3>
+                        <div className="grid md:grid-cols-3 gap-4">
+                            <QuickAction 
+                                icon={Brain}
+                                title="5-minutowa medytacja"
+                                description="Szybki reset mentalny"
+                            />
+                            <QuickAction 
+                                icon={Activity}
+                                title="Oddech Wima Hofa"
+                                description="30 głębokich oddechów"
+                            />
+                            <QuickAction 
+                                icon={Heart}
+                                title="Koherencja serca"
+                                description="Synchronizacja rytmów"
+                            />
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Zakładka Postępy
+        function ProgressTab({ userProgress }) {
+            return (
+                <div className="space-y-6">
+                    <div className="glass-morphism rounded-2xl p-8 text-white text-center mb-8">
+                        <TrendingUp className="w-16 h-16 mx-auto mb-4 quantum-particle" />
+                        <h2 className="text-3xl font-bold mb-2">Twoje Postępy</h2>
+                        <p className="text-lg opacity-90">Monitoring transformacji</p>
+                    </div>
+
+                    {/* Main Stats */}
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <ProgressCard 
+                            title="Narzędzia Mentalne"
+                            value={userProgress.mentalTools}
+                            icon={Brain}
+                            color="purple"
+                        />
+                        <ProgressCard 
+                            title="Praktyki Fizyczne"
+                            value={userProgress.physicalPractices}
+                            icon={Activity}
+                            color="green"
+                        />
+                        <ProgressCard 
+                            title="Poziom Kwantowy"
+                            value={userProgress.quantumLevel}
+                            icon={Sparkles}
+                            color="blue"
+                        />
+                        <ProgressCard 
+                            title="Kondycja Umysłu"
+                            value={userProgress.mindCondition}
+                            icon={Heart}
+                            color="pink"
+                        />
+                    </div>
+
+                    {/* Detailed Progress */}
+                    <div className="glass-morphism rounded-2xl p-8 text-white">
+                        <h3 className="text-2xl font-bold mb-6">Osiągnięcia</h3>
+                        <div className="space-y-4">
+                            <Achievement 
+                                title="Pierwsze Kroki"
+                                description="Rozpoczęto podróż transformacji"
+                                unlocked={true}
+                            />
+                            <Achievement 
+                                title="Praktykujący"
+                                description="10 dni regularnej praktyki"
+                                unlocked={userProgress.physicalPractices > 20}
+                            />
+                            <Achievement 
+                                title="Mistrz Narzędzi"
+                                description="Opanowano wszystkie mentalne narzędzia kwantowe"
+                                unlocked={userProgress.mentalTools > 80}
+                            />
+                            <Achievement 
+                                title="Homo Sapiens Quantum"
+                                description="Pełna integracja ciała, umysłu i ducha"
+                                unlocked={userProgress.mindCondition === 100}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Next Steps */}
+                    <div className="glass-morphism rounded-2xl p-8 text-white">
+                        <h3 className="text-2xl font-bold mb-6">Następne Kroki</h3>
+                        <div className="space-y-3">
+                            <NextStep 
+                                task="Praktykuj Algorytm Kamień Filozoficzny codziennie przez 7 dni"
+                                completed={false}
+                            />
+                            <NextStep 
+                                task="Wdróż optymalizację snu (regularne godziny, ciemność)"
+                                completed={false}
+                            />
+                            <NextStep 
+                                task="Zaimplementuj suplementację podstawową"
+                                completed={false}
+                            />
+                            <NextStep 
+                                task="Utrzymuj codzienna medytację 20 minut"
+                                completed={false}
+                            />
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Helper Components
+        function StatCard({ icon: Icon, title, value, color }) {
+            const colors = {
+                blue: 'from-blue-500 to-blue-700',
+                green: 'from-green-500 to-green-700',
+                purple: 'from-purple-500 to-purple-700'
+            };
+
+            return (
+                <div className={`bg-gradient-to-br ${colors[color]} rounded-xl p-6 text-white text-center`}>
+                    <Icon className="w-12 h-12 mx-auto mb-3" />
+                    <div className="text-3xl font-bold mb-1">{value}</div>
+                    <div className="text-sm opacity-90">{title}</div>
+                </div>
+            );
+        }
+
+        function IntroCard({ icon: Icon, title, description, gradient }) {
+            return (
+                <div className={`bg-gradient-to-br ${gradient} rounded-2xl p-6 text-white hover:scale-105 transition-transform`}>
+                    <Icon className="w-12 h-12 mb-4" />
+                    <h3 className="text-xl font-bold mb-3">{title}</h3>
+                    <p className="opacity-90 leading-relaxed">{description}</p>
+                </div>
+            );
+        }
+
+        function PillarCard({ number, title, description }) {
+            return (
+                <div className="bg-white/10 rounded-xl p-6 text-center hover:bg-white/20 transition">
+                    <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
+                        {number}
+                    </div>
+                    <h4 className="text-lg font-semibold mb-2">{title}</h4>
+                    <p className="text-sm opacity-80">{description}</p>
+                </div>
+            );
+        }
+
+        function Quote({ text }) {
+            return (
+                <div className="bg-white/10 rounded-xl p-6 border-l-4 border-white/50">
+                    <p className="text-lg italic">"{text}"</p>
+                </div>
+            );
+        }
+
+        function ToolCard({ tool, onClick }) {
+            const colors = {
+                purple: 'from-purple-500 to-purple-700',
+                pink: 'from-pink-500 to-pink-700',
+                blue: 'from-blue-500 to-blue-700',
+                green: 'from-green-500 to-green-700',
+                indigo: 'from-indigo-500 to-indigo-700'
+            };
+
+            return (
+                <div 
+                    onClick={onClick}
+                    className={`bg-gradient-to-br ${colors[tool.color]} rounded-2xl p-6 text-white cursor-pointer hover:scale-105 transition-transform`}
+                >
+                    <tool.icon className="w-12 h-12 mb-4" />
+                    <div className="text-xs uppercase tracking-wide opacity-80 mb-2">{tool.category}</div>
+                    <h3 className="text-xl font-bold mb-3">{tool.name}</h3>
+                    <p className="opacity-90 leading-relaxed mb-4">{tool.description}</p>
+                    <div className="flex items-center text-sm font-semibold">
+                        <span>Dowiedz się więcej</span>
+                        <ChevronRight className="w-4 h-4 ml-1" />
+                    </div>
+                </div>
+            );
+        }
+
+        function ToolDetails({ tool, onBack }) {
+            return (
+                <div className="glass-morphism rounded-2xl p-8 text-white">
+                    <button 
+                        onClick={onBack}
+                        className="flex items-center mb-6 hover:opacity-80 transition"
+                    >
+                        <ChevronRight className="w-5 h-5 rotate-180 mr-2" />
+                        <span>Powrót do listy narzędzi</span>
+                    </button>
+
+                    <div className="flex items-start space-x-4 mb-8">
+                        <tool.icon className="w-16 h-16 flex-shrink-0" />
+                        <div>
+                            <div className="text-sm uppercase tracking-wide opacity-80 mb-1">{tool.category}</div>
+                            <h2 className="text-3xl font-bold mb-3">{tool.name}</h2>
+                            <p className="text-lg opacity-90">{tool.description}</p>
+                        </div>
+                    </div>
+
+                    <div className="bg-white/10 rounded-xl p-6">
+                        <h3 className="text-xl font-bold mb-4">Kroki praktyki:</h3>
+                        <div className="space-y-4">
+                            {tool.steps.map((step, index) => (
+                                <div key={index} className="flex items-start space-x-3">
+                                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        {index + 1}
+                                    </div>
+                                    <p className="flex-1 leading-relaxed">{step}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="mt-6 bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-6">
+                        <h4 className="font-semibold mb-2 flex items-center">
+                            <Sparkles className="w-5 h-5 mr-2" />
+                            Wskazówka
+                        </h4>
+                        <p className="text-sm opacity-90">
+                            Regularność jest kluczowa. Praktykuj to narzędzie codziennie przez minimum 21 dni, 
+                            aby zaobserwować trwałe zmiany na Poziomie Niemierzalnym.
+                        </p>
+                    </div>
+                </div>
+            );
+        }
+
+        function PracticeCard({ practice, onComplete }) {
+            const [expanded, setExpanded] = useState(false);
+
+            return (
+                <div className="glass-morphism rounded-2xl overflow-hidden">
+                    <div className="p-6">
+                        <practice.icon className="w-12 h-12 text-white mb-4" />
+                        <div className="text-xs uppercase tracking-wide opacity-80 mb-2 text-white">{practice.category}</div>
+                        <h3 className="text-xl font-bold mb-3 text-white">{practice.name}</h3>
+                        <button
+                            onClick={() => setExpanded(!expanded)}
+                            className="text-sm text-white/80 hover:text-white flex items-center"
+                        >
+                            {expanded ? 'Zwiń' : 'Rozwiń wskazówki'}
+                            <ChevronRight className={`w-4 h-4 ml-1 transition-transform ${expanded ? 'rotate-90' : ''}`} />
+                        </button>
+                    </div>
+
+                    {expanded && (
+                        <div className="px-6 pb-6">
+                            <div className="bg-white/10 rounded-xl p-4">
+                                <ul className="space-y-2 text-sm text-white">
+                                    {practice.tips.map((tip, index) => (
+                                        <li key={index} className="flex items-start">
+                                            <Check className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                                            <span>{tip}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                            <button
+                                onClick={onComplete}
+                                className="mt-4 w-full bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition"
+                            >
+                                Oznacz jako wykonane
+                            </button>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function QuickAction({ icon: Icon, title, description }) {
+            return (
+                <div className="bg-white/10 rounded-xl p-6 hover:bg-white/20 transition cursor-pointer">
+                    <Icon className="w-10 h-10 mb-3" />
+                    <h4 className="font-semibold mb-1">{title}</h4>
+                    <p className="text-sm opacity-80">{description}</p>
+                </div>
+            );
+        }
+
+        function ProgressCard({ title, value, icon: Icon, color }) {
+            const colors = {
+                purple: 'from-purple-500 to-purple-700',
+                green: 'from-green-500 to-green-700',
+                blue: 'from-blue-500 to-blue-700',
+                pink: 'from-pink-500 to-pink-700'
+            };
+
+            return (
+                <div className={`bg-gradient-to-br ${colors[color]} rounded-2xl p-6 text-white`}>
+                    <Icon className="w-10 h-10 mb-4 opacity-80" />
+                    <div className="text-sm opacity-90 mb-2">{title}</div>
+                    <div className="flex items-end justify-between">
+                        <div className="text-4xl font-bold">{value}%</div>
+                        <div className="w-20 h-20">
+                            <CircularProgress value={value} color="white" />
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function CircularProgress({ value, color }) {
+            const radius = 30;
+            const circumference = 2 * Math.PI * radius;
+            const offset = circumference - (value / 100) * circumference;
+
+            return (
+                <svg className="transform -rotate-90" width="80" height="80">
+                    <circle
+                        cx="40"
+                        cy="40"
+                        r={radius}
+                        stroke="rgba(255,255,255,0.2)"
+                        strokeWidth="8"
+                        fill="none"
+                    />
+                    <circle
+                        cx="40"
+                        cy="40"
+                        r={radius}
+                        stroke={color}
+                        strokeWidth="8"
+                        fill="none"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={offset}
+                        className="progress-ring"
+                    />
+                </svg>
+            );
+        }
+
+        function Achievement({ title, description, unlocked }) {
+            return (
+                <div className={`bg-white/10 rounded-xl p-4 flex items-center space-x-4 ${unlocked ? 'opacity-100' : 'opacity-50'}`}>
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${unlocked ? 'bg-yellow-500' : 'bg-white/20'}`}>
+                        <Star className="w-6 h-6" />
+                    </div>
+                    <div className="flex-1">
+                        <h4 className="font-semibold">{title}</h4>
+                        <p className="text-sm opacity-80">{description}</p>
+                    </div>
+                    {unlocked && <Check className="w-6 h-6 text-green-400" />}
+                </div>
+            );
+        }
+
+        function NextStep({ task, completed }) {
+            return (
+                <div className="bg-white/10 rounded-xl p-4 flex items-start space-x-3">
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${completed ? 'bg-green-500 border-green-500' : 'border-white/50'}`}>
+                        {completed && <Check className="w-4 h-4" />}
+                    </div>
+                    <p className={completed ? 'line-through opacity-60' : ''}>{task}</p>
+                </div>
+            );
+        }
+
+        // Render App
+        ReactDOM.render(<BiohakingApp />, document.getElementById('root'));
+    </script>
+</body>
+</html>
