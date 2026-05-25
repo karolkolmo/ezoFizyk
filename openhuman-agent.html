@@ -430,7 +430,7 @@ function OpenHumanAgent() {
 
     const removeBookmark = (id, e) => { e.stopPropagation(); setBookmarks(bs => bs.filter(b => b.id !== id)); };
 
-    /* ── AI chat — Google Gemini ── */
+    /* ── AI chat — działa BEZ klucza (Pollinations.ai) lub z kluczem Gemini ── */
     const sendAI = async () => {
         if (!userInput.trim() || thinking) return;
         const msg = userInput.trim();
@@ -439,61 +439,72 @@ function OpenHumanAgent() {
         setMessages(newMsgs);
         setThinking(true);
 
-        if (!geminiKey) {
-            setTimeout(() => {
-                setMessages(m => [...m, { role: 'assistant', content: '⚙️ Aby korzystać z AI, dodaj klucz Gemini API w Ustawieniach (⚙️).\n\nKlucz uzyskasz BEZPŁATNIE w 30 sekund na:\naistudio.google.com/app/apikey\n\nWystarczy konto Google — bez karty kredytowej!' }]);
-                setThinking(false);
-            }, 400);
-            return;
-        }
-
         try {
             const ctx = currentUrl ? `[Użytkownik aktualnie przegląda: ${currentUrl}]\n\n` : '';
-            const lastMsg = ctx + msg;
+            const lastUserMsg = ctx + msg;
+            let reply = '';
 
-            // Konwertuj historię do formatu Gemini (role: user/model)
-            const geminiHistory = newMsgs.slice(0, -1).map(m => ({
-                role: m.role === 'assistant' ? 'model' : 'user',
-                parts: [{ text: m.content }]
-            }));
+            if (geminiKey) {
+                /* ── Gemini (jeśli klucz ustawiony) ── */
+                const geminiContents = newMsgs.slice(0, -1).map(m => ({
+                    role: m.role === 'assistant' ? 'model' : 'user',
+                    parts: [{ text: m.content }]
+                }));
+                const res = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+                            contents: [...geminiContents, { role: 'user', parts: [{ text: lastUserMsg }] }],
+                            generationConfig: { maxOutputTokens: 2048, temperature: 0.7 },
+                            safetySettings: [
+                                { category: 'HARM_CATEGORY_HARASSMENT',       threshold: 'BLOCK_NONE' },
+                                { category: 'HARM_CATEGORY_HATE_SPEECH',       threshold: 'BLOCK_NONE' },
+                                { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+                                { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+                            ],
+                        }),
+                    }
+                );
+                if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || `HTTP ${res.status}`); }
+                const data = await res.json();
+                reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '(brak odpowiedzi)';
 
-            const res = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
-                {
+            } else {
+                /* ── Pollinations.ai — całkowicie darmowe, bez klucza ── */
+                const pollinationsMsgs = [
+                    { role: 'system', content: SYSTEM_PROMPT },
+                    ...newMsgs.slice(0, -1),
+                    { role: 'user', content: lastUserMsg }
+                ];
+                const res = await fetch('https://text.pollinations.ai/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-                        contents: [
-                            ...geminiHistory,
-                            { role: 'user', parts: [{ text: lastMsg }] }
-                        ],
-                        generationConfig: { maxOutputTokens: 2048, temperature: 0.7 },
-                        safetySettings: [
-                            { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_NONE' },
-                            { category: 'HARM_CATEGORY_HATE_SPEECH',        threshold: 'BLOCK_NONE' },
-                            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',  threshold: 'BLOCK_NONE' },
-                            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT',  threshold: 'BLOCK_NONE' },
-                        ],
+                        model: 'openai-large',
+                        messages: pollinationsMsgs,
+                        seed: Math.floor(Math.random() * 9999),
+                        private: true,
                     }),
-                }
-            );
-
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                throw new Error(err.error?.message || `HTTP ${res.status}`);
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                reply = await res.text();
+                // Pollinations czasem zwraca JSON, wyciągnij tekst
+                try {
+                    const j = JSON.parse(reply);
+                    reply = j.choices?.[0]?.message?.content || j.content || reply;
+                } catch {}
             }
-
-            const data = await res.json();
-            const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '(brak odpowiedzi)';
 
             // Auto-nawigacja gdy AI sugeruje URL
             const navMatch = reply.match(/NAVIGATE:\s*(https?:\/\/\S+)/);
             if (navMatch) { navigate(navMatch[1]); setActivePanel('browser'); }
 
-            setMessages(m => [...m, { role: 'assistant', content: reply }]);
+            setMessages(m => [...m, { role: 'assistant', content: reply.trim() }]);
         } catch (err) {
-            setMessages(m => [...m, { role: 'assistant', content: `❌ Błąd Gemini API: ${err.message}\n\nSprawdź klucz API w Ustawieniach (⚙️).` }]);
+            setMessages(m => [...m, { role: 'assistant', content: `❌ Błąd AI: ${err.message}\n\nSpróbuj jeszcze raz lub sprawdź połączenie z internetem.` }]);
         } finally {
             setThinking(false);
         }
@@ -848,14 +859,11 @@ function OpenHumanAgent() {
 
                         {/* Input */}
                         <div style={{ padding:'12px 16px', borderTop:'1px solid rgba(255,255,255,0.07)' }}>
-                            {!geminiKey && (
-                                <p style={{ fontSize:12, color:'#f59e0b', marginBottom:8, textAlign:'center' }}>
-                                    ⚠️ Brak klucza Gemini API ·{' '}
-                                    <button onClick={() => setShowSettings(true)} style={{ background:'none', border:'none', cursor:'pointer', color:'#fbbf24', textDecoration:'underline', fontSize:12 }}>
-                                        Konfiguruj w Ustawieniach
-                                    </button>
-                                </p>
-                            )}
+                            <div style={{ display:'flex', justifyContent:'center', marginBottom:6 }}>
+                                <span style={{ fontSize:11, padding:'3px 10px', borderRadius:20, background: geminiKey ? 'rgba(52,211,153,0.1)' : 'rgba(102,126,234,0.1)', color: geminiKey ? '#34d399' : '#a78bfa', border: `1px solid ${geminiKey ? 'rgba(52,211,153,0.25)' : 'rgba(102,126,234,0.25)'}` }}>
+                                    {geminiKey ? '✦ Gemini AI' : '✦ Pollinations AI (bezpłatny)'}
+                                </span>
+                            </div>
                             <div style={{ display:'flex', gap:'10px', alignItems:'flex-end', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'14px', padding:'10px 12px' }}>
                                 <textarea
                                     value={userInput}
@@ -875,7 +883,7 @@ function OpenHumanAgent() {
                                 </button>
                             </div>
                             <p style={{ fontSize:10, color:'#374151', textAlign:'center', marginTop:6 }}>
-                                Powered by Google Gemini · Bezpłatny · Dane nie są zapisywane
+                                {geminiKey ? 'Powered by Google Gemini' : 'Powered by Pollinations.ai · Bezpłatny · Bez rejestracji'}
                             </p>
                         </div>
                     </div>
@@ -892,25 +900,32 @@ function OpenHumanAgent() {
                         </div>
 
                         <div style={{ display:'flex', flexDirection:'column', gap:'22px' }}>
-                            {/* Gemini key */}
+
+                            {/* Status AI */}
+                            <div style={{ padding:'12px 14px', borderRadius:10, background: geminiKey ? 'rgba(52,211,153,0.07)' : 'rgba(102,126,234,0.07)', border: `1px solid ${geminiKey ? 'rgba(52,211,153,0.2)' : 'rgba(102,126,234,0.2)'}` }}>
+                                <p style={{ fontSize:13, fontWeight:600, color: geminiKey ? '#34d399' : '#a78bfa', marginBottom:4 }}>
+                                    {geminiKey ? '✅ Gemini AI aktywny' : '✅ AI działa — Pollinations (bez klucza)'}
+                                </p>
+                                <p style={{ fontSize:11, color:'#6b7280' }}>
+                                    {geminiKey ? 'Używasz Google Gemini 1.5 Flash.' : 'AI działa natychmiast, bez żadnej konfiguracji. Opcjonalnie możesz dodać klucz Gemini poniżej dla lepszej jakości.'}
+                                </p>
+                            </div>
+
+                            {/* Gemini key — opcjonalny */}
                             <div>
                                 <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, fontWeight:500, color:'#d1d5db', marginBottom:8 }}>
-                                    {I.key} Klucz Gemini API <span style={{ color:'#34d399', fontSize:11 }}>(bezpłatny)</span>
+                                    {I.key} Klucz Gemini API <span style={{ color:'#6b7280', fontSize:11 }}>(opcjonalny — lepsza jakość)</span>
                                 </label>
                                 <input
                                     type="password"
                                     value={geminiKey}
                                     onChange={e => setGeminiKey(e.target.value)}
                                     className="form-input"
-                                    placeholder="AIzaSy..."
+                                    placeholder="AIzaSy... (zostaw puste — AI działa bez klucza)"
                                 />
-                                <div style={{ marginTop:8, padding:'10px 12px', borderRadius:9, background:'rgba(52,211,153,0.07)', border:'1px solid rgba(52,211,153,0.2)', fontSize:11, color:'#6ee7b7', lineHeight:1.7 }}>
-                                    ✅ <strong>Jak uzyskać bezpłatnie (30 sekund):</strong><br/>
-                                    1. Otwórz: <span style={{ color:'#34d399' }}>aistudio.google.com/app/apikey</span><br/>
-                                    2. Kliknij <strong>"Create API key"</strong><br/>
-                                    3. Skopiuj klucz i wklej powyżej<br/>
-                                    Wystarczy konto Google — bez karty kredytowej!
-                                </div>
+                                <p style={{ fontSize:11, color:'#4b5563', marginTop:5 }}>
+                                    Bezpłatny klucz: <span style={{ color:'#667eea' }}>aistudio.google.com/app/apikey</span>
+                                </p>
                             </div>
 
                             {/* Google Client ID */}
