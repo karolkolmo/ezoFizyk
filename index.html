@@ -1,10 +1,285 @@
 <!DOCTYPE html>
-<html>
+<html lang="pl">
 <head>
-    <meta http-equiv="refresh" content="0; url=biohaking-neurohaking-app_2-kopia.html">
-    <title>Biohaking App</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ezoFizyk · Karol Kolmo</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            background: radial-gradient(ellipse at 20% 20%, #1a1a3e 0%, #0f0f1a 60%);
+            color: #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .logo {
+            font-size: 4rem;
+            margin-bottom: 12px;
+            filter: drop-shadow(0 0 30px rgba(102,126,234,0.6));
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        h1 {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea, #a78bfa, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -1px;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: 1rem;
+            text-align: center;
+            margin-bottom: 56px;
+            letter-spacing: 0.5px;
+        }
+
+        .cards {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 780px;
+            width: 100%;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 20px;
+            padding: 36px 32px;
+            flex: 1;
+            min-width: 280px;
+            max-width: 360px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            display: block;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            transition: opacity 0.3s;
+            border-radius: inherit;
+        }
+
+        .card-ai::before { background: linear-gradient(135deg, rgba(102,126,234,0.12), rgba(118,75,162,0.12)); }
+        .card-bio::before { background: linear-gradient(135deg, rgba(16,185,129,0.10), rgba(59,130,246,0.10)); }
+
+        .card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(255,255,255,0.18);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+
+        .card:hover::before { opacity: 1; }
+
+        .card-ai:hover { box-shadow: 0 20px 60px rgba(102,126,234,0.25); }
+        .card-bio:hover { box-shadow: 0 20px 60px rgba(16,185,129,0.2); }
+
+        .card-icon {
+            font-size: 2.8rem;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .card-badge {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 3px 10px;
+            border-radius: 20px;
+            margin-bottom: 12px;
+        }
+
+        .badge-ai { background: rgba(102,126,234,0.2); color: #a78bfa; border: 1px solid rgba(102,126,234,0.3); }
+        .badge-bio { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+
+        .card h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            font-size: 13.5px;
+            color: #9ca3af;
+            line-height: 1.65;
+            margin-bottom: 24px;
+        }
+
+        .card-features {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            margin-bottom: 28px;
+        }
+
+        .card-features li {
+            font-size: 12.5px;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-features li::before {
+            content: '✓';
+            font-weight: 700;
+            font-size: 11px;
+            flex-shrink: 0;
+        }
+
+        .card-ai .card-features li::before { color: #667eea; }
+        .card-bio .card-features li::before { color: #34d399; }
+
+        .card-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 11px 22px;
+            border-radius: 10px;
+            font-size: 13.5px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-ai { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; }
+        .btn-bio { background: linear-gradient(135deg, #059669, #0891b2); color: #fff; }
+
+        .card:hover .card-btn { transform: translateX(3px); }
+
+        .footer {
+            margin-top: 56px;
+            text-align: center;
+            color: #374151;
+            font-size: 12px;
+            line-height: 1.8;
+        }
+
+        .footer a { color: #4b5563; text-decoration: none; }
+        .footer a:hover { color: #667eea; }
+
+        .stars {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #fff;
+            border-radius: 50%;
+            opacity: 0;
+            animation: twinkle var(--d, 4s) ease-in-out infinite var(--delay, 0s);
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0; }
+            50% { opacity: var(--op, 0.4); }
+        }
+
+        .content { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; }
+    </style>
 </head>
 <body>
-    <p>Przekierowanie do aplikacji <a href="biohaking-neurohaking-app_2-kopia.html">tutaj</a>...</p>
+
+<!-- Twinkling stars background -->
+<div class="stars" id="stars"></div>
+
+<div class="content">
+    <div class="logo">🌌</div>
+    <h1>ezoFizyk</h1>
+    <p class="subtitle">Karol Kolmo · Biohaking · Neurohaking · AI</p>
+
+    <div class="cards">
+        <!-- OpenHuman Agent -->
+        <a href="openhuman-agent.html" class="card card-ai">
+            <span class="card-icon">🤖</span>
+            <span class="card-badge badge-ai">AI Agent</span>
+            <h2>OpenHuman Agent</h2>
+            <p>Osobisty asystent AI z wbudowaną przeglądarką. Odpowiada na pytania, nawiguje po internecie i pomaga optymalizować Twoje zdrowie i umysł.</p>
+            <ul class="card-features">
+                <li>Wbudowana przeglądarka z zakładkami</li>
+                <li>Logowanie przez Google</li>
+                <li>AI Chat (Claude) z kontekstem strony</li>
+                <li>Historia i zarządzanie zakładkami</li>
+                <li>Szybkie akcje: biohaking, sen, suplementy</li>
+            </ul>
+            <span class="card-btn btn-ai">Uruchom agenta →</span>
+        </a>
+
+        <!-- Biohaking App -->
+        <a href="biohaking-neurohaking-app_2-kopia.html" class="card card-bio">
+            <span class="card-icon">🧠</span>
+            <span class="card-badge badge-bio">Aplikacja</span>
+            <h2>Biohaking & Neurohaking</h2>
+            <p>Kompleksowy przewodnik po optymalizacji ciała i umysłu inspirowany filozofią ezoFizyki i pracami Krystiana Defera.</p>
+            <ul class="card-features">
+                <li>Teoria ezoFizyki i Kwantowe Narzędzia</li>
+                <li>Algorytm Kamień Filozoficzny</li>
+                <li>Praktyki codzienne (sen, odżywianie, ruch)</li>
+                <li>Monitoring postępów i osiągnięcia</li>
+                <li>Inspirowane Homo Sapiens Quantum</li>
+            </ul>
+            <span class="card-btn btn-bio">Otwórz aplikację →</span>
+        </a>
+    </div>
+
+    <footer class="footer">
+        <p>© 2025 Karol Kolmo · <a href="https://github.com/karolkolmo/ezoFizyk" target="_blank">GitHub</a></p>
+        <p style="margin-top:4px">Dane przechowywane lokalnie · Prywatność gwarantowana</p>
+    </footer>
+</div>
+
+<script>
+    // Generate random stars
+    const container = document.getElementById('stars');
+    for (let i = 0; i < 80; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        star.style.cssText = `
+            left: ${Math.random() * 100}%;
+            top: ${Math.random() * 100}%;
+            --d: ${3 + Math.random() * 5}s;
+            --delay: ${Math.random() * 6}s;
+            --op: ${0.2 + Math.random() * 0.5};
+            width: ${Math.random() > 0.8 ? 3 : 2}px;
+            height: ${Math.random() > 0.8 ? 3 : 2}px;
+        `;
+        container.appendChild(star);
+    }
+</script>
 </body>
 </html>
