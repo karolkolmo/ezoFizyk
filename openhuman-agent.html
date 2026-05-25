@@ -282,7 +282,7 @@ function OpenHumanAgent() {
     const [showLogin, setShowLogin] = useState(!S.get('oh_user', null));
 
     /* Config */
-    const [anthropicKey, setAnthropicKey]   = useState(S.get('oh_api_key', ''));
+    const [geminiKey, setGeminiKey]         = useState(S.get('oh_gemini_key', ''));
     const [googleClientId, setGoogleClientId] = useState(S.get('oh_gci', ''));
     const [showSettings, setShowSettings]   = useState(false);
 
@@ -430,7 +430,7 @@ function OpenHumanAgent() {
 
     const removeBookmark = (id, e) => { e.stopPropagation(); setBookmarks(bs => bs.filter(b => b.id !== id)); };
 
-    /* ── AI chat ── */
+    /* ── AI chat — Google Gemini ── */
     const sendAI = async () => {
         if (!userInput.trim() || thinking) return;
         const msg = userInput.trim();
@@ -439,34 +439,45 @@ function OpenHumanAgent() {
         setMessages(newMsgs);
         setThinking(true);
 
-        if (!anthropicKey) {
+        if (!geminiKey) {
             setTimeout(() => {
-                setMessages(m => [...m, { role: 'assistant', content: '⚙️ Aby korzystać z AI, dodaj swój klucz API Anthropic w Ustawieniach.\n\nKlucz uzyskasz bezpłatnie na: console.anthropic.com' }]);
+                setMessages(m => [...m, { role: 'assistant', content: '⚙️ Aby korzystać z AI, dodaj klucz Gemini API w Ustawieniach (⚙️).\n\nKlucz uzyskasz BEZPŁATNIE w 30 sekund na:\naistudio.google.com/app/apikey\n\nWystarczy konto Google — bez karty kredytowej!' }]);
                 setThinking(false);
             }, 400);
             return;
         }
 
         try {
-            const ctx = currentUrl ? `[Aktualnie przeglądam: ${currentUrl}]\n\n` : '';
-            const res = await fetch('https://api.anthropic.com/v1/messages', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-api-key': anthropicKey,
-                    'anthropic-version': '2023-06-01',
-                    'anthropic-dangerous-direct-browser-access': 'true',
-                },
-                body: JSON.stringify({
-                    model: 'claude-sonnet-4-6',
-                    max_tokens: 2048,
-                    system: SYSTEM_PROMPT,
-                    messages: newMsgs.map((m, i) => ({
-                        role: m.role,
-                        content: (i === newMsgs.length - 1 && m.role === 'user') ? ctx + m.content : m.content
-                    })),
-                }),
-            });
+            const ctx = currentUrl ? `[Użytkownik aktualnie przegląda: ${currentUrl}]\n\n` : '';
+            const lastMsg = ctx + msg;
+
+            // Konwertuj historię do formatu Gemini (role: user/model)
+            const geminiHistory = newMsgs.slice(0, -1).map(m => ({
+                role: m.role === 'assistant' ? 'model' : 'user',
+                parts: [{ text: m.content }]
+            }));
+
+            const res = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+                        contents: [
+                            ...geminiHistory,
+                            { role: 'user', parts: [{ text: lastMsg }] }
+                        ],
+                        generationConfig: { maxOutputTokens: 2048, temperature: 0.7 },
+                        safetySettings: [
+                            { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_NONE' },
+                            { category: 'HARM_CATEGORY_HATE_SPEECH',        threshold: 'BLOCK_NONE' },
+                            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',  threshold: 'BLOCK_NONE' },
+                            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT',  threshold: 'BLOCK_NONE' },
+                        ],
+                    }),
+                }
+            );
 
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
@@ -474,15 +485,15 @@ function OpenHumanAgent() {
             }
 
             const data = await res.json();
-            const reply = data.content?.[0]?.text || '(brak odpowiedzi)';
+            const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '(brak odpowiedzi)';
 
-            // Auto-navigate if AI suggests URL
+            // Auto-nawigacja gdy AI sugeruje URL
             const navMatch = reply.match(/NAVIGATE:\s*(https?:\/\/\S+)/);
             if (navMatch) { navigate(navMatch[1]); setActivePanel('browser'); }
 
             setMessages(m => [...m, { role: 'assistant', content: reply }]);
         } catch (err) {
-            setMessages(m => [...m, { role: 'assistant', content: `❌ Błąd API: ${err.message}\n\nSprawdź klucz API w Ustawieniach.` }]);
+            setMessages(m => [...m, { role: 'assistant', content: `❌ Błąd Gemini API: ${err.message}\n\nSprawdź klucz API w Ustawieniach (⚙️).` }]);
         } finally {
             setThinking(false);
         }
@@ -495,7 +506,7 @@ function OpenHumanAgent() {
     };
 
     const saveSettings = () => {
-        S.set('oh_api_key', anthropicKey);
+        S.set('oh_gemini_key', geminiKey);
         S.set('oh_gci', googleClientId);
         setShowSettings(false);
     };
@@ -837,9 +848,9 @@ function OpenHumanAgent() {
 
                         {/* Input */}
                         <div style={{ padding:'12px 16px', borderTop:'1px solid rgba(255,255,255,0.07)' }}>
-                            {!anthropicKey && (
+                            {!geminiKey && (
                                 <p style={{ fontSize:12, color:'#f59e0b', marginBottom:8, textAlign:'center' }}>
-                                    ⚠️ Brak klucza API ·{' '}
+                                    ⚠️ Brak klucza Gemini API ·{' '}
                                     <button onClick={() => setShowSettings(true)} style={{ background:'none', border:'none', cursor:'pointer', color:'#fbbf24', textDecoration:'underline', fontSize:12 }}>
                                         Konfiguruj w Ustawieniach
                                     </button>
@@ -864,7 +875,7 @@ function OpenHumanAgent() {
                                 </button>
                             </div>
                             <p style={{ fontSize:10, color:'#374151', textAlign:'center', marginTop:6 }}>
-                                Powered by Claude · Dane nie są wysyłane nigdzie poza Anthropic API
+                                Powered by Google Gemini · Bezpłatny · Dane nie są zapisywane
                             </p>
                         </div>
                     </div>
@@ -881,21 +892,25 @@ function OpenHumanAgent() {
                         </div>
 
                         <div style={{ display:'flex', flexDirection:'column', gap:'22px' }}>
-                            {/* Anthropic key */}
+                            {/* Gemini key */}
                             <div>
                                 <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, fontWeight:500, color:'#d1d5db', marginBottom:8 }}>
-                                    {I.key} Klucz API Anthropic (Claude AI) <span style={{ color:'#ef4444' }}>*</span>
+                                    {I.key} Klucz Gemini API <span style={{ color:'#34d399', fontSize:11 }}>(bezpłatny)</span>
                                 </label>
                                 <input
                                     type="password"
-                                    value={anthropicKey}
-                                    onChange={e => setAnthropicKey(e.target.value)}
+                                    value={geminiKey}
+                                    onChange={e => setGeminiKey(e.target.value)}
                                     className="form-input"
-                                    placeholder="sk-ant-api03-..."
+                                    placeholder="AIzaSy..."
                                 />
-                                <p style={{ fontSize:11, color:'#4b5563', marginTop:5 }}>
-                                    Uzyskaj bezpłatnie: <span style={{ color:'#667eea' }}>console.anthropic.com</span>
-                                </p>
+                                <div style={{ marginTop:8, padding:'10px 12px', borderRadius:9, background:'rgba(52,211,153,0.07)', border:'1px solid rgba(52,211,153,0.2)', fontSize:11, color:'#6ee7b7', lineHeight:1.7 }}>
+                                    ✅ <strong>Jak uzyskać bezpłatnie (30 sekund):</strong><br/>
+                                    1. Otwórz: <span style={{ color:'#34d399' }}>aistudio.google.com/app/apikey</span><br/>
+                                    2. Kliknij <strong>"Create API key"</strong><br/>
+                                    3. Skopiuj klucz i wklej powyżej<br/>
+                                    Wystarczy konto Google — bez karty kredytowej!
+                                </div>
                             </div>
 
                             {/* Google Client ID */}
