@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpenHuman Agent</title>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://js.puter.com/v2/" async defer></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -283,10 +282,8 @@ function OpenHumanAgent() {
     const [showLogin, setShowLogin] = useState(!S.get('oh_user', null));
 
     /* Config */
-    const [geminiKey, setGeminiKey]         = useState(S.get('oh_gemini_key', ''));
-    const [googleClientId, setGoogleClientId] = useState(S.get('oh_gci', ''));
-    const [showSettings, setShowSettings]   = useState(false);
-    const [googleError, setGoogleError]     = useState('');
+    const [geminiKey, setGeminiKey]     = useState(S.get('oh_gemini_key', ''));
+    const [showSettings, setShowSettings] = useState(false);
 
     /* Layout */
     const [activePanel, setActivePanel]   = useState('browser');
@@ -320,40 +317,6 @@ function OpenHumanAgent() {
     useEffect(() => { S.set('oh_user', user); }, [user]);
     useEffect(() => { messagesEnd.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, thinking]);
 
-    /* Google Sign-In setup — only when Client ID is explicitly configured */
-    useEffect(() => {
-        if (!googleClientId || !showLogin) return;
-        const init = () => {
-            if (!window.google?.accounts?.id) return setTimeout(init, 400);
-            try {
-                window.google.accounts.id.initialize({
-                    client_id: googleClientId,
-                    callback: onGoogleToken,
-                    auto_select: false,   // never auto-sign — user must click
-                    cancel_on_tap_outside: true,
-                    use_fedcm_for_prompt: false,
-                });
-                const btn = document.getElementById('g-btn');
-                if (btn) window.google.accounts.id.renderButton(btn, { theme: 'filled_black', size: 'large', width: 320 });
-            } catch (err) {
-                console.warn('Google Sign-In init failed:', err);
-            }
-        };
-        init();
-    }, [googleClientId, showLogin]);
-
-    const onGoogleToken = (resp) => {
-        try {
-            const p = JSON.parse(atob(resp.credential.split('.')[1]));
-            const u = { name: p.name, email: p.email, picture: p.picture, sub: p.sub };
-            setUser(u); setShowLogin(false);
-        } catch (err) {
-            console.error('Google token error:', err);
-            setGoogleError('Błąd Google Sign-In. Użyj logowania lokalnego poniżej.');
-        }
-    };
-
-
     const localLogin = (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
@@ -361,7 +324,7 @@ function OpenHumanAgent() {
         setShowLogin(false);
     };
 
-    const logout = () => { setUser(null); setShowLogin(true); S.set('oh_user', null); window.google?.accounts?.id?.disableAutoSelect?.(); };
+    const logout = () => { setUser(null); setShowLogin(true); S.set('oh_user', null); };
 
     /* ── Browser navigation ── */
     const navigate = useCallback((rawUrl) => {
@@ -515,7 +478,6 @@ function OpenHumanAgent() {
 
     const saveSettings = () => {
         S.set('oh_gemini_key', geminiKey);
-        S.set('oh_gci', googleClientId);
         setShowSettings(false);
     };
 
@@ -529,73 +491,39 @@ function OpenHumanAgent() {
     /* ══ LOGIN SCREEN ══ */
     if (showLogin) {
         const resetAll = () => {
-            ['oh_user','oh_gci','oh_api_key','oh_bookmarks','oh_history'].forEach(k => localStorage.removeItem(k));
-            setGoogleClientId('');
-            setAnthropicKey('');
-            setGoogleError('');
-            alert('Dane wyczyszczone. Zaloguj się ponownie.');
+            ['oh_user','oh_gemini_key','oh_gci','oh_api_key','oh_bookmarks','oh_history'].forEach(k => localStorage.removeItem(k));
+            setGeminiKey('');
+            window.location.reload();
         };
 
         return (
             <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'radial-gradient(ellipse at top, #1a1a3e 0%, #0f0f1a 70%)' }}>
                 <div className="login-card fade-in">
-                    {/* Logo */}
-                    <div style={{ textAlign:'center', marginBottom:'28px' }}>
-                        <div style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:'72px', height:'72px', borderRadius:'50%', background:'linear-gradient(135deg,#667eea,#764ba2)', boxShadow:'0 0 40px rgba(102,126,234,0.5)', fontSize:'2rem', marginBottom:'14px' }}>🤖</div>
-                        <h1 style={{ fontSize:'1.8rem', fontWeight:700 }} className="gradient-text">OpenHuman Agent</h1>
-                        <p style={{ color:'#6b7280', marginTop:'6px', fontSize:'13px' }}>Twój osobisty asystent AI z wbudowaną przeglądarką</p>
+                    <div style={{ textAlign:'center', marginBottom:'32px' }}>
+                        <div style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:'80px', height:'80px', borderRadius:'50%', background:'linear-gradient(135deg,#667eea,#764ba2)', boxShadow:'0 0 50px rgba(102,126,234,0.6)', fontSize:'2.2rem', marginBottom:'16px' }}>🤖</div>
+                        <h1 style={{ fontSize:'2rem', fontWeight:800 }} className="gradient-text">OpenHuman Agent</h1>
+                        <p style={{ color:'#6b7280', marginTop:'8px', fontSize:'14px' }}>Twój osobisty asystent AI z wbudowaną przeglądarką</p>
                     </div>
 
-                    {/* ── LOKALNE LOGOWANIE — główna metoda ── */}
-                    <div style={{ padding:'16px', borderRadius:'14px', background:'rgba(102,126,234,0.07)', border:'1px solid rgba(102,126,234,0.2)', marginBottom:'16px' }}>
-                        <p style={{ fontSize:'11px', color:'#a78bfa', fontWeight:600, letterSpacing:'0.5px', marginBottom:'12px', textTransform:'uppercase' }}>
-                            ✅ Logowanie lokalne — działa bez konfiguracji
-                        </p>
-                        <form onSubmit={localLogin} style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
-                            <div>
-                                <label style={{ display:'block', fontSize:'12px', color:'#9ca3af', marginBottom:'5px' }}>Imię</label>
-                                <input name="name" defaultValue="Karol" className="form-input" placeholder="Twoje imię" />
-                            </div>
-                            <div>
-                                <label style={{ display:'block', fontSize:'12px', color:'#9ca3af', marginBottom:'5px' }}>Email</label>
-                                <input name="email" type="email" defaultValue="karol.kolmo35@gmail.com" className="form-input" placeholder="email@gmail.com" />
-                            </div>
-                            <button type="submit" className="btn-primary" style={{ width:'100%', padding:'13px', borderRadius:'11px', fontWeight:700, fontSize:'15px', color:'#fff', border:'none', cursor:'pointer', marginTop:'2px' }}>
-                                Wejdź do OpenHuman →
-                            </button>
-                        </form>
-                    </div>
-
-                    {/* ── GOOGLE — opcjonalne, tylko jeśli skonfigurowane ── */}
-                    {googleClientId ? (
-                        <div style={{ marginBottom:'12px' }}>
-                            <div style={{ display:'flex', alignItems:'center', margin:'12px 0', gap:'10px' }}>
-                                <div style={{ flex:1, height:'1px', background:'rgba(255,255,255,0.07)' }}></div>
-                                <span style={{ color:'#374151', fontSize:'11px' }}>lub Google Sign-In</span>
-                                <div style={{ flex:1, height:'1px', background:'rgba(255,255,255,0.07)' }}></div>
-                            </div>
-                            <div id="g-btn" style={{ display:'flex', justifyContent:'center' }}></div>
-                            {googleError && (
-                                <div style={{ marginTop:'8px', padding:'8px 12px', borderRadius:'8px', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', fontSize:'12px', color:'#f87171', textAlign:'center' }}>
-                                    {googleError}
-                                </div>
-                            )}
+                    <form onSubmit={localLogin} style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
+                        <div>
+                            <label style={{ display:'block', fontSize:'12px', color:'#9ca3af', marginBottom:'6px' }}>Imię</label>
+                            <input name="name" defaultValue="Karol" className="form-input" placeholder="Twoje imię" />
                         </div>
-                    ) : (
-                        <p style={{ textAlign:'center', fontSize:'11px', color:'#374151', marginBottom:'12px' }}>
-                            Google Sign-In możesz skonfigurować po zalogowaniu w ⚙️ Ustawieniach
-                        </p>
-                    )}
-
-                    {/* Reset */}
-                    <div style={{ textAlign:'center', marginTop:'8px' }}>
-                        <button onClick={resetAll} style={{ background:'none', border:'none', cursor:'pointer', fontSize:'11px', color:'#374151', textDecoration:'underline' }}>
-                            Problemy z logowaniem? Wyczyść dane i zacznij od nowa
+                        <div>
+                            <label style={{ display:'block', fontSize:'12px', color:'#9ca3af', marginBottom:'6px' }}>Email</label>
+                            <input name="email" type="email" defaultValue="karol.kolmo35@gmail.com" className="form-input" placeholder="email@gmail.com" />
+                        </div>
+                        <button type="submit" className="btn-primary" style={{ width:'100%', padding:'15px', borderRadius:'12px', fontWeight:700, fontSize:'16px', color:'#fff', border:'none', cursor:'pointer', marginTop:'4px', letterSpacing:'0.3px' }}>
+                            Wejdź do OpenHuman →
                         </button>
-                    </div>
+                    </form>
 
-                    <p style={{ textAlign:'center', fontSize:'11px', color:'#1f2937', marginTop:'14px' }}>
-                        Dane przechowywane wyłącznie lokalnie w Twojej przeglądarce
+                    <p style={{ textAlign:'center', fontSize:'11px', color:'#374151', marginTop:'20px' }}>
+                        Dane przechowywane lokalnie w Twojej przeglądarce ·{' '}
+                        <button onClick={resetAll} style={{ background:'none', border:'none', cursor:'pointer', color:'#4b5563', textDecoration:'underline', fontSize:'11px' }}>
+                            Wyczyść i zacznij od nowa
+                        </button>
                     </p>
                 </div>
             </div>
@@ -922,22 +850,6 @@ function OpenHumanAgent() {
                                 />
                                 <p style={{ fontSize:11, color:'#4b5563', marginTop:5 }}>
                                     Bezpłatny klucz: <span style={{ color:'#667eea' }}>aistudio.google.com/app/apikey</span>
-                                </p>
-                            </div>
-
-                            {/* Google Client ID */}
-                            <div>
-                                <label style={{ display:'block', fontSize:13, fontWeight:500, color:'#d1d5db', marginBottom:8 }}>
-                                    🔑 Google Client ID (dla Google Sign-In)
-                                </label>
-                                <input
-                                    value={googleClientId}
-                                    onChange={e => setGoogleClientId(e.target.value)}
-                                    className="form-input"
-                                    placeholder="123456789-abc.apps.googleusercontent.com"
-                                />
-                                <p style={{ fontSize:11, color:'#4b5563', marginTop:5 }}>
-                                    Utwórz: console.cloud.google.com → APIs & Services → Credentials → OAuth 2.0
                                 </p>
                             </div>
 
