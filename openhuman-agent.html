@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenHuman Agent</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0f0f1a;
+            color: #e2e8f0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
+        ::-webkit-scrollbar-thumb { background: rgba(102,126,234,0.4); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(102,126,234,0.7); }
+
+        .glass {
+            background: rgba(255,255,255,0.04);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            transition: all 0.2s ease;
+        }
+        .btn-primary:hover:not(:disabled) {
+            opacity: 0.88;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(102,126,234,0.4);
+        }
+        .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        .tab-active {
+            background: rgba(102,126,234,0.18);
+            color: #a78bfa;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .sidebar-item {
+            border-radius: 8px;
+            transition: background 0.15s;
+            cursor: pointer;
+        }
+        .sidebar-item:hover { background: rgba(255,255,255,0.07); }
+
+        .msg-user {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 18px 18px 4px 18px;
+        }
+        .msg-ai {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 18px 18px 18px 4px;
+        }
+
+        .browser-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #fff;
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.25s ease forwards; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin 0.8s linear infinite; }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .dot-1 { animation: blink 1.2s ease infinite 0s; }
+        .dot-2 { animation: blink 1.2s ease infinite 0.2s; }
+        .dot-3 { animation: blink 1.2s ease infinite 0.4s; }
+
+        input, textarea {
+            background: transparent;
+            color: inherit;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .url-input-wrap {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 10px;
+            transition: border-color 0.2s;
+        }
+        .url-input-wrap:focus-within { border-color: rgba(102,126,234,0.5); }
+
+        .icon-btn {
+            padding: 6px;
+            border-radius: 7px;
+            color: #6b7280;
+            transition: all 0.15s;
+        }
+        .icon-btn:hover { background: rgba(255,255,255,0.08); color: #e2e8f0; }
+
+        .badge {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #667eea;
+            display: inline-block;
+            animation: blink 1.4s ease infinite;
+        }
+
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000;
+        }
+
+        .blocked-list button {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            padding: 3px 10px;
+            font-size: 11px;
+            color: #9ca3af;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .blocked-list button:hover { color: #a78bfa; border-color: rgba(102,126,234,0.4); }
+
+        .ai-quick-chip {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 12px;
+            color: #9ca3af;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.15s;
+            flex-shrink: 0;
+        }
+        .ai-quick-chip:hover { color: #a78bfa; border-color: rgba(102,126,234,0.4); background: rgba(102,126,234,0.08); }
+
+        .login-card {
+            background: rgba(15,15,30,0.95);
+            border: 1px solid rgba(102,126,234,0.25);
+            border-radius: 24px;
+            padding: 48px 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(102,126,234,0.1);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: #e2e8f0;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        .form-input:focus { border-color: rgba(102,126,234,0.5); }
+
+        .tab-browser, .tab-browser * { font-size: 11px; }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+/* ─── Storage helpers ─── */
+const S = {
+    get: (k, d) => { try { const v = localStorage.getItem(k); return v !== null ? JSON.parse(v) : d; } catch { return d; } },
+    set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+
+/* ─── Constants ─── */
+const DEFAULT_BOOKMARKS = [
+    { id: 1, icon: '🔍', title: 'Google',          url: 'https://www.google.com' },
+    { id: 2, icon: '📚', title: 'Wikipedia PL',     url: 'https://pl.wikipedia.org' },
+    { id: 3, icon: '🔬', title: 'PubMed',           url: 'https://pubmed.ncbi.nlm.nih.gov' },
+    { id: 4, icon: '🧠', title: 'ezoFizyk App',     url: './biohaking-neurohaking-app_2-kopia.html' },
+    { id: 5, icon: '💻', title: 'GitHub',            url: 'https://github.com' },
+    { id: 6, icon: '📖', title: 'Archive.org',       url: 'https://archive.org' },
+    { id: 7, icon: '🌿', title: 'Examine.com',       url: 'https://examine.com' },
+    { id: 8, icon: '🧬', title: 'OpenHumans',        url: 'https://www.openhumans.org' },
+];
+
+const SYSTEM_PROMPT = `Jesteś OpenHuman Agent — zaawansowanym asystentem AI stworzonym przez użytkownika Karol do eksploracji wiedzy o ludzkim potencjale.
+
+Twoje specjalizacje:
+• Biohaking i neurohaking (optymalizacja ciała i umysłu)
+• ezoFizyka i koncepcje Krystiana Defera (Poziom Niemierzalny, Algorytm Kamień Filozoficzny, Homo Sapiens Quantum)
+• Nauki o zdrowiu, suplementacja, chronobiologia, neuroplastyczność
+• Nawigacja i analiza treści ze stron internetowych
+• Wyszukiwanie i synteza informacji naukowych
+
+Zasady odpowiedzi:
+• Odpowiadaj po polsku, chyba że użytkownik pisze inaczej
+• Bądź konkretny i oparty na danych gdzie możliwe
+• Gdy warto coś wyszukać, sugeruj URL w formacie: NAVIGATE: https://...
+• Odpowiedzi formatuj czytelnie, używaj punktorów i akapitów`;
+
+const FRIENDLY_SITES = [
+    'wikipedia.org', 'archive.org', 'pubmed.ncbi.nlm.nih.gov', 'examine.com',
+    'openhumans.org', 'openlibrary.org', 'scholar.google.com',
+];
+
+/* ─── SVG Icons ─── */
+const I = {
+    globe:    <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
+    ai:       <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>,
+    settings: <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
+    back:     <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>,
+    forward:  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>,
+    refresh:  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>,
+    home:     <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+    bookmark: <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>,
+    history:  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+    send:     <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
+    close:    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+    plus:     <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+    logout:   <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+    external: <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>,
+    copy:     <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
+    key:      <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>,
+    check:    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>,
+    brain:    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636-.707.707M21 12h-1M4 12H3m3.343-5.657-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>,
+};
+
+/* ─── formatMessage: simple markdown → JSX ─── */
+function FormatMsg({ text }) {
+    const lines = text.split('\n');
+    return (
+        <div className="space-y-1">
+            {lines.map((line, i) => {
+                if (line.startsWith('• ') || line.startsWith('- ')) {
+                    return <div key={i} className="flex items-start space-x-2"><span className="text-purple-400 mt-0.5">•</span><span>{line.slice(2)}</span></div>;
+                }
+                if (line.startsWith('**') && line.endsWith('**')) {
+                    return <p key={i} className="font-semibold text-white">{line.slice(2,-2)}</p>;
+                }
+                if (line.trim() === '') return <div key={i} className="h-1"></div>;
+                return <p key={i}>{line}</p>;
+            })}
+        </div>
+    );
+}
+
+/* ════════════════════════════════════════════
+   Main App
+════════════════════════════════════════════ */
+function OpenHumanAgent() {
+    /* Auth */
+    const [user, setUser]   = useState(S.get('oh_user', null));
+    const [showLogin, setShowLogin] = useState(!S.get('oh_user', null));
+
+    /* Config */
+    const [anthropicKey, setAnthropicKey]   = useState(S.get('oh_api_key', ''));
+    const [googleClientId, setGoogleClientId] = useState(S.get('oh_gci', ''));
+    const [showSettings, setShowSettings]   = useState(false);
+
+    /* Layout */
+    const [activePanel, setActivePanel]   = useState('browser');
+    const [sidebarTab, setSidebarTab]     = useState('bookmarks');
+
+    /* Browser state */
+    const [tabs, setTabs]             = useState([{ id: 1, title: 'Nowa karta', url: 'https://www.google.com', favicon: '🌐' }]);
+    const [activeTabId, setActiveTabId] = useState(1);
+    const [urlInput, setUrlInput]     = useState('https://www.google.com');
+    const [currentUrl, setCurrentUrl] = useState('https://www.google.com');
+    const [iframeKey, setIframeKey]   = useState(0);
+    const [loading, setLoading]       = useState(false);
+    const [blocked, setBlocked]       = useState(false);
+    const [bookmarks, setBookmarks]   = useState(S.get('oh_bookmarks', DEFAULT_BOOKMARKS));
+    const [history, setHistory]       = useState(S.get('oh_history', []));
+    const iframeRef = useRef(null);
+    const iframeTimeoutRef = useRef(null);
+
+    /* AI state */
+    const [messages, setMessages]   = useState([
+        { role: 'assistant', content: 'Cześć! Jestem Twoim OpenHuman Agent 🤖\n\nPomagam Ci w nawigacji po internecie, odpowiadam na pytania o biohaking, neurohaking i optymalizację zdrowia.\n\nCo chcesz dziś zbadać lub osiągnąć?' }
+    ]);
+    const [userInput, setUserInput] = useState('');
+    const [thinking, setThinking]   = useState(false);
+    const [copied, setCopied]       = useState(null);
+    const messagesEnd = useRef(null);
+
+    /* Persist */
+    useEffect(() => { S.set('oh_bookmarks', bookmarks); }, [bookmarks]);
+    useEffect(() => { S.set('oh_history', history.slice(0, 150)); }, [history]);
+    useEffect(() => { S.set('oh_user', user); }, [user]);
+    useEffect(() => { messagesEnd.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, thinking]);
+
+    /* Google Sign-In setup */
+    useEffect(() => {
+        if (!googleClientId || !showLogin) return;
+        const init = () => {
+            if (!window.google?.accounts?.id) return setTimeout(init, 300);
+            window.google.accounts.id.initialize({ client_id: googleClientId, callback: onGoogleToken, auto_select: true });
+            const btn = document.getElementById('g-btn');
+            if (btn) window.google.accounts.id.renderButton(btn, { theme: 'filled_black', size: 'large', width: 320 });
+        };
+        init();
+    }, [googleClientId, showLogin]);
+
+    const onGoogleToken = (resp) => {
+        try {
+            const p = JSON.parse(atob(resp.credential.split('.')[1]));
+            const u = { name: p.name, email: p.email, picture: p.picture, sub: p.sub };
+            setUser(u); setShowLogin(false);
+        } catch { alert('Błąd logowania Google. Sprawdź Client ID.'); }
+    };
+
+    const localLogin = (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        setUser({ name: fd.get('name') || 'Użytkownik', email: fd.get('email') || 'local@openhuman', picture: null, sub: 'local_' + Date.now() });
+        setShowLogin(false);
+    };
+
+    const logout = () => { setUser(null); setShowLogin(true); S.set('oh_user', null); window.google?.accounts?.id?.disableAutoSelect?.(); };
+
+    /* ── Browser navigation ── */
+    const navigate = useCallback((rawUrl) => {
+        let url = rawUrl.trim();
+        if (!url) return;
+        if (url.startsWith('./') || url.startsWith('/')) { /* relative - ok */ }
+        else if (!url.match(/^https?:\/\//)) {
+            url = url.includes('.') && !url.includes(' ')
+                ? 'https://' + url
+                : 'https://www.google.com/search?q=' + encodeURIComponent(url);
+        }
+        setUrlInput(url);
+        setCurrentUrl(url);
+        setBlocked(false);
+        setLoading(true);
+        setIframeKey(k => k + 1);
+        setTabs(ts => ts.map(t => t.id === activeTabId ? { ...t, url, title: tryHostname(url) } : t));
+        setHistory(h => [{ url, time: Date.now() }, ...h.filter(x => x.url !== url).slice(0, 149)]);
+        clearTimeout(iframeTimeoutRef.current);
+        iframeTimeoutRef.current = setTimeout(() => { setLoading(false); setBlocked(true); }, 8000);
+    }, [activeTabId]);
+
+    const tryHostname = (url) => { try { return new URL(url).hostname; } catch { return url; } };
+
+    const iframeLoaded = () => {
+        clearTimeout(iframeTimeoutRef.current);
+        setLoading(false);
+        try {
+            const title = iframeRef.current?.contentDocument?.title;
+            if (title) setTabs(ts => ts.map(t => t.id === activeTabId ? { ...t, title } : t));
+        } catch {}
+    };
+
+    const iframeError = () => {
+        clearTimeout(iframeTimeoutRef.current);
+        setLoading(false);
+        setBlocked(true);
+    };
+
+    const urlSubmit = (e) => { e.preventDefault(); navigate(urlInput); };
+
+    const newTab = () => {
+        const id = Date.now();
+        setTabs(ts => [...ts, { id, title: 'Nowa karta', url: 'https://www.google.com', favicon: '🌐' }]);
+        setActiveTabId(id);
+        navigate('https://www.google.com');
+    };
+
+    const closeTab = (id, e) => {
+        e.stopPropagation();
+        if (tabs.length === 1) return;
+        const next = tabs.filter(t => t.id !== id);
+        setTabs(next);
+        if (activeTabId === id) {
+            const last = next[next.length - 1];
+            setActiveTabId(last.id);
+            navigate(last.url);
+        }
+    };
+
+    const switchTab = (t) => { setActiveTabId(t.id); setUrlInput(t.url); setCurrentUrl(t.url); setBlocked(false); setIframeKey(k => k + 1); };
+
+    const addBookmark = () => {
+        if (bookmarks.find(b => b.url === currentUrl)) return;
+        setBookmarks(bs => [...bs, { id: Date.now(), icon: '🔖', title: tryHostname(currentUrl), url: currentUrl }]);
+    };
+
+    const removeBookmark = (id, e) => { e.stopPropagation(); setBookmarks(bs => bs.filter(b => b.id !== id)); };
+
+    /* ── AI chat ── */
+    const sendAI = async () => {
+        if (!userInput.trim() || thinking) return;
+        const msg = userInput.trim();
+        setUserInput('');
+        const newMsgs = [...messages, { role: 'user', content: msg }];
+        setMessages(newMsgs);
+        setThinking(true);
+
+        if (!anthropicKey) {
+            setTimeout(() => {
+                setMessages(m => [...m, { role: 'assistant', content: '⚙️ Aby korzystać z AI, dodaj swój klucz API Anthropic w Ustawieniach.\n\nKlucz uzyskasz bezpłatnie na: console.anthropic.com' }]);
+                setThinking(false);
+            }, 400);
+            return;
+        }
+
+        try {
+            const ctx = currentUrl ? `[Aktualnie przeglądam: ${currentUrl}]\n\n` : '';
+            const res = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': anthropicKey,
+                    'anthropic-version': '2023-06-01',
+                    'anthropic-dangerous-direct-browser-access': 'true',
+                },
+                body: JSON.stringify({
+                    model: 'claude-sonnet-4-6',
+                    max_tokens: 2048,
+                    system: SYSTEM_PROMPT,
+                    messages: newMsgs.map((m, i) => ({
+                        role: m.role,
+                        content: (i === newMsgs.length - 1 && m.role === 'user') ? ctx + m.content : m.content
+                    })),
+                }),
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error?.message || `HTTP ${res.status}`);
+            }
+
+            const data = await res.json();
+            const reply = data.content?.[0]?.text || '(brak odpowiedzi)';
+
+            // Auto-navigate if AI suggests URL
+            const navMatch = reply.match(/NAVIGATE:\s*(https?:\/\/\S+)/);
+            if (navMatch) { navigate(navMatch[1]); setActivePanel('browser'); }
+
+            setMessages(m => [...m, { role: 'assistant', content: reply }]);
+        } catch (err) {
+            setMessages(m => [...m, { role: 'assistant', content: `❌ Błąd API: ${err.message}\n\nSprawdź klucz API w Ustawieniach.` }]);
+        } finally {
+            setThinking(false);
+        }
+    };
+
+    const handleChatKey = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAI(); } };
+
+    const copyMsg = (text, i) => {
+        navigator.clipboard?.writeText(text).then(() => { setCopied(i); setTimeout(() => setCopied(null), 1500); });
+    };
+
+    const saveSettings = () => {
+        S.set('oh_api_key', anthropicKey);
+        S.set('oh_gci', googleClientId);
+        setShowSettings(false);
+    };
+
+    const clearData = () => {
+        if (confirm('Wyczyścić historię i zakładki?')) {
+            setHistory([]);
+            setBookmarks(DEFAULT_BOOKMARKS);
+        }
+    };
+
+    /* ══ LOGIN SCREEN ══ */
+    if (showLogin) {
+        return (
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'radial-gradient(ellipse at top, #1a1a3e 0%, #0f0f1a 70%)' }}>
+                <div className="login-card fade-in">
+                    {/* Logo */}
+                    <div style={{ textAlign:'center', marginBottom:'32px' }}>
+                        <div style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:'72px', height:'72px', borderRadius:'50%', background:'linear-gradient(135deg,#667eea,#764ba2)', boxShadow:'0 0 40px rgba(102,126,234,0.5)', fontSize:'2rem', marginBottom:'16px' }}>🤖</div>
+                        <h1 style={{ fontSize:'1.8rem', fontWeight:700 }} className="gradient-text">OpenHuman Agent</h1>
+                        <p style={{ color:'#6b7280', marginTop:'6px', fontSize:'14px' }}>Twój osobisty asystent AI z wbudowaną przeglądarką</p>
+                    </div>
+
+                    {googleClientId && (
+                        <>
+                            <div id="g-btn" style={{ display:'flex', justifyContent:'center', marginBottom:'16px' }}></div>
+                            <div style={{ display:'flex', alignItems:'center', margin:'16px 0', gap:'12px' }}>
+                                <div style={{ flex:1, height:'1px', background:'rgba(255,255,255,0.08)' }}></div>
+                                <span style={{ color:'#4b5563', fontSize:'12px' }}>lub zaloguj lokalnie</span>
+                                <div style={{ flex:1, height:'1px', background:'rgba(255,255,255,0.08)' }}></div>
+                            </div>
+                        </>
+                    )}
+
+                    {!googleClientId && (
+                        <div style={{ padding:'10px 14px', borderRadius:'10px', background:'rgba(245,158,11,0.08)', border:'1px solid rgba(245,158,11,0.25)', marginBottom:'16px', fontSize:'12px', color:'#f59e0b' }}>
+                            💡 Google Sign-In: skonfiguruj Client ID w Ustawieniach po zalogowaniu
+                        </div>
+                    )}
+
+                    <form onSubmit={localLogin} style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
+                        <div>
+                            <label style={{ display:'block', fontSize:'12px', color:'#9ca3af', marginBottom:'6px' }}>Imię</label>
+                            <input name="name" defaultValue="Karol" className="form-input" placeholder="Twoje imię" />
+                        </div>
+                        <div>
+                            <label style={{ display:'block', fontSize:'12px', color:'#9ca3af', marginBottom:'6px' }}>Email</label>
+                            <input name="email" type="email" defaultValue="karol.kolmo35@gmail.com" className="form-input" placeholder="email@gmail.com" />
+                        </div>
+                        <button type="submit" className="btn-primary" style={{ width:'100%', padding:'13px', borderRadius:'12px', fontWeight:600, fontSize:'15px', color:'#fff', border:'none', cursor:'pointer', marginTop:'4px' }}>
+                            Wejdź do OpenHuman →
+                        </button>
+                    </form>
+
+                    <p style={{ textAlign:'center', fontSize:'11px', color:'#4b5563', marginTop:'20px' }}>
+                        Dane przechowywane lokalnie · Prywatność gwarantowana
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    /* ══ MAIN APP ══ */
+    return (
+        <div style={{ display:'flex', flexDirection:'column', height:'100vh', background:'#0f0f1a', overflow:'hidden' }}>
+
+            {/* ── Top Bar ── */}
+            <div className="glass" style={{ display:'flex', alignItems:'center', padding:'0 12px', height:'50px', gap:'10px', borderBottom:'1px solid rgba(255,255,255,0.07)', flexShrink:0 }}>
+                {/* Logo */}
+                <div style={{ display:'flex', alignItems:'center', gap:'8px', flexShrink:0 }}>
+                    <span style={{ fontSize:'1.4rem' }}>🤖</span>
+                    <span className="gradient-text" style={{ fontWeight:700, fontSize:'14px', letterSpacing:'-0.3px' }}>OpenHuman</span>
+                </div>
+
+                {/* Panel switcher */}
+                <div style={{ display:'flex', gap:'2px', background:'rgba(255,255,255,0.04)', borderRadius:'10px', padding:'3px' }}>
+                    {[
+                        { id:'browser', label:'Przeglądarka', icon:I.globe },
+                        { id:'ai',      label:'AI Agent',     icon:I.ai },
+                    ].map(p => (
+                        <button
+                            key={p.id}
+                            onClick={() => setActivePanel(p.id)}
+                            style={{ display:'flex', alignItems:'center', gap:'5px', padding:'5px 12px', borderRadius:'7px', border:'none', cursor:'pointer', fontSize:'13px', fontWeight:500, transition:'all 0.15s', color: activePanel===p.id ? '#a78bfa' : '#6b7280', background: activePanel===p.id ? 'rgba(102,126,234,0.15)' : 'transparent' }}
+                        >
+                            {p.icon}
+                            <span>{p.label}</span>
+                            {p.id === 'ai' && thinking && <span className="badge" style={{ marginLeft:2 }}></span>}
+                        </button>
+                    ))}
+                </div>
+
+                <div style={{ flex:1 }}></div>
+
+                {/* Controls */}
+                <button className="icon-btn" title="Ustawienia" onClick={() => setShowSettings(true)} style={{ border:'none', cursor:'pointer' }}>{I.settings}</button>
+
+                <div style={{ display:'flex', alignItems:'center', gap:'8px', padding:'5px 10px', borderRadius:'10px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)' }}>
+                    {user?.picture
+                        ? <img src={user.picture} alt="" style={{ width:22, height:22, borderRadius:'50%', objectFit:'cover' }} />
+                        : <div style={{ width:22, height:22, borderRadius:'50%', background:'linear-gradient(135deg,#667eea,#764ba2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#fff' }}>{user?.name?.[0]?.toUpperCase()}</div>
+                    }
+                    <span style={{ fontSize:13, color:'#d1d5db' }}>{user?.name?.split(' ')[0]}</span>
+                    <button className="icon-btn" onClick={logout} title="Wyloguj" style={{ border:'none', cursor:'pointer', padding:4 }}>{I.logout}</button>
+                </div>
+            </div>
+
+            {/* ── Browser tabs row ── */}
+            {activePanel === 'browser' && (
+                <div style={{ display:'flex', alignItems:'center', height:'34px', minHeight:'34px', padding:'0 8px', background:'#0a0a14', borderBottom:'1px solid rgba(255,255,255,0.06)', overflowX:'auto', gap:'2px', flexShrink:0 }}>
+                    {tabs.map(tab => (
+                        <div
+                            key={tab.id}
+                            onClick={() => switchTab(tab)}
+                            style={{ display:'flex', alignItems:'center', gap:'6px', padding:'0 10px', height:'28px', borderRadius:'7px 7px 0 0', cursor:'pointer', fontSize:'11px', maxWidth:'160px', flexShrink:0, transition:'background 0.15s', background: tab.id===activeTabId ? '#1a1a2e' : 'transparent', color: tab.id===activeTabId ? '#d1d5db' : '#6b7280' }}
+                        >
+                            <span style={{ fontSize:'13px' }}>{tab.favicon}</span>
+                            <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1 }}>{tab.title}</span>
+                            {tabs.length > 1 && (
+                                <button onClick={(e) => closeTab(tab.id, e)} style={{ background:'none', border:'none', cursor:'pointer', color:'#4b5563', display:'flex', alignItems:'center', padding:'1px', borderRadius:3 }}
+                                    onMouseEnter={e => e.target.style.color='#ef4444'} onMouseLeave={e => e.target.style.color='#4b5563'}>
+                                    {I.close}
+                                </button>
+                            )}
+                        </div>
+                    ))}
+                    <button onClick={newTab} style={{ background:'none', border:'none', cursor:'pointer', color:'#4b5563', padding:'4px', borderRadius:5, display:'flex', alignItems:'center' }}
+                        onMouseEnter={e => e.currentTarget.style.color='#9ca3af'} onMouseLeave={e => e.currentTarget.style.color='#4b5563'}>
+                        {I.plus}
+                    </button>
+                </div>
+            )}
+
+            {/* ── Main content ── */}
+            <div style={{ display:'flex', flex:1, overflow:'hidden' }}>
+
+                {/* Sidebar */}
+                <div style={{ width:'210px', flexShrink:0, background:'#0a0a14', borderRight:'1px solid rgba(255,255,255,0.06)', display:'flex', flexDirection:'column', overflow:'hidden' }}>
+                    {/* Sidebar tabs */}
+                    <div style={{ display:'flex', borderBottom:'1px solid rgba(255,255,255,0.06)', flexShrink:0 }}>
+                        {[
+                            { id:'bookmarks', label:'Zakładki', icon:I.bookmark },
+                            { id:'history',   label:'Historia', icon:I.history },
+                        ].map(st => (
+                            <button key={st.id} onClick={() => setSidebarTab(st.id)}
+                                style={{ flex:1, padding:'8px 4px', border:'none', borderBottom: sidebarTab===st.id ? '2px solid #667eea' : '2px solid transparent', background:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:'4px', fontSize:'11px', color: sidebarTab===st.id ? '#a78bfa' : '#6b7280', transition:'all 0.15s' }}>
+                                {st.icon} {st.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Sidebar content */}
+                    <div style={{ flex:1, overflowY:'auto', padding:'6px' }}>
+                        {sidebarTab === 'bookmarks' ? (
+                            bookmarks.length === 0
+                                ? <p style={{ textAlign:'center', fontSize:11, color:'#4b5563', padding:'20px 8px' }}>Brak zakładek</p>
+                                : bookmarks.map(bm => (
+                                    <div key={bm.id} className="sidebar-item" onClick={() => { navigate(bm.url); setActivePanel('browser'); }}
+                                        style={{ display:'flex', alignItems:'center', gap:'7px', padding:'7px 8px', fontSize:'12px', color:'#d1d5db', position:'relative' }}>
+                                        <span style={{ fontSize:'14px', flexShrink:0 }}>{bm.icon}</span>
+                                        <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1 }}>{bm.title}</span>
+                                        <button onClick={(e) => removeBookmark(bm.id, e)} style={{ background:'none', border:'none', cursor:'pointer', color:'#4b5563', display:'flex', padding:2, borderRadius:3 }}
+                                            onMouseEnter={e => e.currentTarget.style.color='#ef4444'} onMouseLeave={e => e.currentTarget.style.color='#4b5563'}>
+                                            {I.close}
+                                        </button>
+                                    </div>
+                                ))
+                        ) : (
+                            history.length === 0
+                                ? <p style={{ textAlign:'center', fontSize:11, color:'#4b5563', padding:'20px 8px' }}>Brak historii</p>
+                                : history.slice(0, 100).map((h, i) => (
+                                    <div key={i} className="sidebar-item" onClick={() => { navigate(h.url); setActivePanel('browser'); }}
+                                        style={{ padding:'6px 8px', fontSize:'11px' }}>
+                                        <div style={{ color:'#d1d5db', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{tryHostname(h.url)}</div>
+                                        <div style={{ color:'#4b5563', fontSize:'10px' }}>{new Date(h.time).toLocaleString('pl-PL', { hour:'2-digit', minute:'2-digit', day:'numeric', month:'short' })}</div>
+                                    </div>
+                                ))
+                        )}
+                    </div>
+                </div>
+
+                {/* ── Browser Panel ── */}
+                {activePanel === 'browser' && (
+                    <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+                        {/* URL bar */}
+                        <div style={{ display:'flex', alignItems:'center', gap:'6px', padding:'7px 10px', background:'#0f0f1a', borderBottom:'1px solid rgba(255,255,255,0.07)', flexShrink:0 }}>
+                            <button className="icon-btn" title="Wstecz (nawigacja w historii)" onClick={() => { const prev = history[1]; if (prev) navigate(prev.url); }} style={{ border:'none', cursor:'pointer' }}>{I.back}</button>
+                            <button className="icon-btn" title="Odśwież" onClick={() => { setBlocked(false); setIframeKey(k => k+1); setLoading(true); }} style={{ border:'none', cursor:'pointer' }}>{I.refresh}</button>
+                            <button className="icon-btn" title="Strona główna" onClick={() => navigate('https://www.google.com')} style={{ border:'none', cursor:'pointer' }}>{I.home}</button>
+
+                            <form onSubmit={urlSubmit} style={{ flex:1, display:'flex' }}>
+                                <div className="url-input-wrap" style={{ flex:1, display:'flex', alignItems:'center', padding:'0 10px', gap:'7px' }}>
+                                    <span style={{ color:'#6b7280', flexShrink:0, display:'flex' }}>{I.globe}</span>
+                                    <input
+                                        value={urlInput}
+                                        onChange={e => setUrlInput(e.target.value)}
+                                        onClick={e => e.target.select()}
+                                        placeholder="Wpisz URL lub szukaj..."
+                                        style={{ flex:1, fontSize:'13px', padding:'5px 0', background:'transparent', border:'none', color:'#e2e8f0', outline:'none' }}
+                                    />
+                                    {loading && <div style={{ width:13, height:13, border:'2px solid #667eea', borderTopColor:'transparent', borderRadius:'50%', flexShrink:0 }} className="spin"></div>}
+                                </div>
+                            </form>
+
+                            <button className="icon-btn" title="Dodaj zakładkę" onClick={addBookmark} style={{ border:'none', cursor:'pointer', color: bookmarks.find(b=>b.url===currentUrl) ? '#fbbf24' : undefined }}>{I.bookmark}</button>
+                            <button className="icon-btn" title="Otwórz w nowej karcie" onClick={() => window.open(currentUrl, '_blank')} style={{ border:'none', cursor:'pointer' }}>{I.external}</button>
+                        </div>
+
+                        {/* iframe / blocked */}
+                        <div style={{ flex:1, position:'relative', overflow:'hidden' }}>
+                            {blocked ? (
+                                <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'40px', background:'#0f0f1a', textAlign:'center' }}>
+                                    <span style={{ fontSize:'4rem', marginBottom:'16px' }}>🚫</span>
+                                    <h3 style={{ fontSize:'1.2rem', fontWeight:600, color:'#fff', marginBottom:'8px' }}>Strona blokuje wyświetlanie w ramce</h3>
+                                    <p style={{ color:'#6b7280', fontSize:'14px', maxWidth:'380px', marginBottom:'24px', lineHeight:1.6 }}>
+                                        Ta witryna używa nagłówka <code style={{ background:'rgba(255,255,255,0.08)', padding:'1px 5px', borderRadius:4, fontSize:12 }}>X-Frame-Options</code>, który uniemożliwia osadzenie w przeglądarce wbudowanej.
+                                    </p>
+                                    <div style={{ display:'flex', gap:'10px', flexWrap:'wrap', justifyContent:'center', marginBottom:'24px' }}>
+                                        <button className="btn-primary" onClick={() => window.open(currentUrl, '_blank')} style={{ padding:'10px 20px', borderRadius:'10px', color:'#fff', border:'none', cursor:'pointer', fontWeight:600, display:'flex', alignItems:'center', gap:'6px' }}>
+                                            Otwórz w nowej karcie {I.external}
+                                        </button>
+                                        <button onClick={() => navigate('https://www.google.com')} style={{ padding:'10px 20px', borderRadius:'10px', color:'#9ca3af', border:'1px solid rgba(255,255,255,0.12)', background:'none', cursor:'pointer', fontWeight:500 }}>
+                                            Wróć do Google
+                                        </button>
+                                    </div>
+                                    <div style={{ maxWidth:'460px', padding:'14px', borderRadius:'12px', background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.07)' }}>
+                                        <p style={{ fontSize:'12px', color:'#6b7280', marginBottom:'10px' }}>Strony kompatybilne z przeglądarką wbudowaną:</p>
+                                        <div className="blocked-list" style={{ display:'flex', gap:'6px', flexWrap:'wrap', justifyContent:'center' }}>
+                                            {FRIENDLY_SITES.map(s => (
+                                                <button key={s} onClick={() => navigate('https://'+s)}>{s}</button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <iframe
+                                    key={iframeKey}
+                                    ref={iframeRef}
+                                    src={currentUrl}
+                                    className="browser-iframe"
+                                    onLoad={iframeLoaded}
+                                    onError={iframeError}
+                                    sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation allow-modals allow-downloads"
+                                    title="OpenHuman Browser"
+                                    allow="fullscreen"
+                                />
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* ── AI Panel ── */}
+                {activePanel === 'ai' && (
+                    <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+                        {/* Messages */}
+                        <div style={{ flex:1, overflowY:'auto', padding:'20px 16px', display:'flex', flexDirection:'column', gap:'16px' }}>
+                            {messages.map((msg, i) => (
+                                <div key={i} className="fade-in" style={{ display:'flex', justifyContent: msg.role==='user' ? 'flex-end' : 'flex-start', gap:'10px', alignItems:'flex-start' }}>
+                                    {msg.role === 'assistant' && (
+                                        <div style={{ width:32, height:32, borderRadius:'50%', background:'linear-gradient(135deg,#667eea,#764ba2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1rem', flexShrink:0 }}>🤖</div>
+                                    )}
+                                    <div style={{ maxWidth:'680px' }}>
+                                        <div className={msg.role==='user' ? 'msg-user' : 'msg-ai'} style={{ padding:'12px 16px', fontSize:'13px', lineHeight:1.65, color: msg.role==='user' ? '#fff' : '#d1d5db' }}>
+                                            {msg.role === 'assistant'
+                                                ? <FormatMsg text={msg.content} />
+                                                : <p style={{ whiteSpace:'pre-wrap' }}>{msg.content}</p>
+                                            }
+                                        </div>
+                                        <button
+                                            onClick={() => copyMsg(msg.content, i)}
+                                            style={{ marginTop:4, display:'flex', alignItems:'center', gap:4, fontSize:11, color: copied===i ? '#34d399' : '#4b5563', background:'none', border:'none', cursor:'pointer', padding:'2px 4px', borderRadius:4, transition:'color 0.15s' }}
+                                        >
+                                            {copied === i ? I.check : I.copy}
+                                            {copied === i ? 'Skopiowano' : 'Kopiuj'}
+                                        </button>
+                                    </div>
+                                    {msg.role === 'user' && (
+                                        <div style={{ width:32, height:32, borderRadius:'50%', flexShrink:0, overflow:'hidden' }}>
+                                            {user?.picture
+                                                ? <img src={user.picture} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                                                : <div style={{ width:'100%', height:'100%', background:'linear-gradient(135deg,#764ba2,#667eea)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:700, color:'#fff' }}>{user?.name?.[0]?.toUpperCase()}</div>
+                                            }
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+
+                            {thinking && (
+                                <div className="fade-in" style={{ display:'flex', gap:'10px', alignItems:'center' }}>
+                                    <div style={{ width:32, height:32, borderRadius:'50%', background:'linear-gradient(135deg,#667eea,#764ba2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1rem' }}>🤖</div>
+                                    <div className="msg-ai" style={{ padding:'14px 18px', display:'flex', gap:'6px', alignItems:'center' }}>
+                                        <span className="dot-1" style={{ width:8, height:8, borderRadius:'50%', background:'#667eea', display:'inline-block' }}></span>
+                                        <span className="dot-2" style={{ width:8, height:8, borderRadius:'50%', background:'#667eea', display:'inline-block' }}></span>
+                                        <span className="dot-3" style={{ width:8, height:8, borderRadius:'50%', background:'#667eea', display:'inline-block' }}></span>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div ref={messagesEnd}></div>
+                        </div>
+
+                        {/* Quick chips */}
+                        <div style={{ display:'flex', gap:'6px', padding:'8px 16px', overflowX:'auto' }}>
+                            {[
+                                { label:'🧠 Tip biohakingowy', msg:'Podaj mi dzienny tip z zakresu biohakingu oparty na nauce' },
+                                { label:'⚡ Poranna rutyna', msg:'Zaproponuj mi optymalną poranną rutynę dla biohakera' },
+                                { label:'💊 Suplementy', msg:'Jakie suplementy są najlepiej udokumentowane naukowo dla optymalizacji mózgu?' },
+                                { label:'😴 Sen i regeneracja', msg:'Jak zoptymalizować sen zgodnie z chronobiologią?' },
+                                { label:'📊 Podsumuj stronę', msg:`Przeanalizuj i podsumuj zawartość strony: ${currentUrl}` },
+                            ].map((c, i) => (
+                                <button key={i} className="ai-quick-chip" onClick={() => setUserInput(c.msg)}>{c.label}</button>
+                            ))}
+                        </div>
+
+                        {/* Input */}
+                        <div style={{ padding:'12px 16px', borderTop:'1px solid rgba(255,255,255,0.07)' }}>
+                            {!anthropicKey && (
+                                <p style={{ fontSize:12, color:'#f59e0b', marginBottom:8, textAlign:'center' }}>
+                                    ⚠️ Brak klucza API ·{' '}
+                                    <button onClick={() => setShowSettings(true)} style={{ background:'none', border:'none', cursor:'pointer', color:'#fbbf24', textDecoration:'underline', fontSize:12 }}>
+                                        Konfiguruj w Ustawieniach
+                                    </button>
+                                </p>
+                            )}
+                            <div style={{ display:'flex', gap:'10px', alignItems:'flex-end', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'14px', padding:'10px 12px' }}>
+                                <textarea
+                                    value={userInput}
+                                    onChange={e => setUserInput(e.target.value)}
+                                    onKeyDown={handleChatKey}
+                                    placeholder="Zadaj pytanie lub wydaj polecenie... (Enter = wyślij, Shift+Enter = nowa linia)"
+                                    rows={1}
+                                    style={{ flex:1, fontSize:'13px', resize:'none', background:'transparent', border:'none', color:'#e2e8f0', outline:'none', fontFamily:'inherit', lineHeight:1.5, maxHeight:'120px', overflowY:'auto' }}
+                                />
+                                <button
+                                    className="btn-primary"
+                                    onClick={sendAI}
+                                    disabled={thinking || !userInput.trim()}
+                                    style={{ padding:'8px 12px', borderRadius:'9px', border:'none', cursor:'pointer', color:'#fff', flexShrink:0, display:'flex', alignItems:'center' }}
+                                >
+                                    {I.send}
+                                </button>
+                            </div>
+                            <p style={{ fontSize:10, color:'#374151', textAlign:'center', marginTop:6 }}>
+                                Powered by Claude · Dane nie są wysyłane nigdzie poza Anthropic API
+                            </p>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* ══ Settings Modal ══ */}
+            {showSettings && (
+                <div className="modal-overlay">
+                    <div className="fade-in" style={{ background:'#16162a', border:'1px solid rgba(102,126,234,0.25)', borderRadius:'20px', padding:'36px', width:'100%', maxWidth:'480px', boxShadow:'0 30px 80px rgba(0,0,0,0.6)' }}>
+                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'28px' }}>
+                            <h2 style={{ fontSize:'1.2rem', fontWeight:700, color:'#fff' }}>⚙️ Ustawienia</h2>
+                            <button onClick={() => setShowSettings(false)} style={{ background:'rgba(255,255,255,0.06)', border:'none', cursor:'pointer', color:'#9ca3af', padding:'6px', borderRadius:8, display:'flex' }}>{I.close}</button>
+                        </div>
+
+                        <div style={{ display:'flex', flexDirection:'column', gap:'22px' }}>
+                            {/* Anthropic key */}
+                            <div>
+                                <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, fontWeight:500, color:'#d1d5db', marginBottom:8 }}>
+                                    {I.key} Klucz API Anthropic (Claude AI) <span style={{ color:'#ef4444' }}>*</span>
+                                </label>
+                                <input
+                                    type="password"
+                                    value={anthropicKey}
+                                    onChange={e => setAnthropicKey(e.target.value)}
+                                    className="form-input"
+                                    placeholder="sk-ant-api03-..."
+                                />
+                                <p style={{ fontSize:11, color:'#4b5563', marginTop:5 }}>
+                                    Uzyskaj bezpłatnie: <span style={{ color:'#667eea' }}>console.anthropic.com</span>
+                                </p>
+                            </div>
+
+                            {/* Google Client ID */}
+                            <div>
+                                <label style={{ display:'block', fontSize:13, fontWeight:500, color:'#d1d5db', marginBottom:8 }}>
+                                    🔑 Google Client ID (dla Google Sign-In)
+                                </label>
+                                <input
+                                    value={googleClientId}
+                                    onChange={e => setGoogleClientId(e.target.value)}
+                                    className="form-input"
+                                    placeholder="123456789-abc.apps.googleusercontent.com"
+                                />
+                                <p style={{ fontSize:11, color:'#4b5563', marginTop:5 }}>
+                                    Utwórz: console.cloud.google.com → APIs & Services → Credentials → OAuth 2.0
+                                </p>
+                            </div>
+
+                            {/* Current user */}
+                            <div style={{ padding:'14px', borderRadius:12, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.07)' }}>
+                                <p style={{ fontSize:12, color:'#6b7280', marginBottom:8 }}>Zalogowany jako:</p>
+                                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                                    {user?.picture
+                                        ? <img src={user.picture} alt="" style={{ width:36, height:36, borderRadius:'50%', objectFit:'cover' }} />
+                                        : <div style={{ width:36, height:36, borderRadius:'50%', background:'linear-gradient(135deg,#667eea,#764ba2)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, color:'#fff' }}>{user?.name?.[0]?.toUpperCase()}</div>
+                                    }
+                                    <div>
+                                        <p style={{ fontWeight:600, color:'#fff', fontSize:14 }}>{user?.name}</p>
+                                        <p style={{ fontSize:12, color:'#6b7280' }}>{user?.email}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div style={{ display:'flex', gap:10 }}>
+                                <button className="btn-primary" onClick={saveSettings} style={{ flex:1, padding:'12px', borderRadius:'11px', border:'none', cursor:'pointer', color:'#fff', fontWeight:600, fontSize:14 }}>
+                                    Zapisz ustawienia
+                                </button>
+                                <button onClick={clearData} style={{ padding:'12px 16px', borderRadius:'11px', border:'1px solid rgba(255,255,255,0.12)', background:'none', cursor:'pointer', color:'#9ca3af', fontSize:13, transition:'color 0.15s' }}
+                                    onMouseEnter={e => e.currentTarget.style.color='#ef4444'} onMouseLeave={e => e.currentTarget.style.color='#9ca3af'}>
+                                    Reset danych
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+ReactDOM.render(<OpenHumanAgent />, document.getElementById('root'));
+</script>
+</body>
+</html>
