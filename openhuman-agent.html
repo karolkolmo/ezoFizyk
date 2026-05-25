@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpenHuman Agent</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://js.puter.com/v2/" async defer></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -285,6 +286,7 @@ function OpenHumanAgent() {
     const [geminiKey, setGeminiKey]         = useState(S.get('oh_gemini_key', ''));
     const [googleClientId, setGoogleClientId] = useState(S.get('oh_gci', ''));
     const [showSettings, setShowSettings]   = useState(false);
+    const [googleError, setGoogleError]     = useState('');
 
     /* Layout */
     const [activePanel, setActivePanel]   = useState('browser');
@@ -351,7 +353,6 @@ function OpenHumanAgent() {
         }
     };
 
-    const [googleError, setGoogleError] = useState('');
 
     const localLogin = (e) => {
         e.preventDefault();
@@ -445,7 +446,7 @@ function OpenHumanAgent() {
             let reply = '';
 
             if (geminiKey) {
-                /* ── Gemini (jeśli klucz ustawiony) ── */
+                /* ── Gemini (jeśli klucz ustawiony — lepsza jakość) ── */
                 const geminiContents = newMsgs.slice(0, -1).map(m => ({
                     role: m.role === 'assistant' ? 'model' : 'user',
                     parts: [{ text: m.content }]
@@ -473,30 +474,26 @@ function OpenHumanAgent() {
                 reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '(brak odpowiedzi)';
 
             } else {
-                /* ── Pollinations.ai — całkowicie darmowe, bez klucza ── */
-                const pollinationsMsgs = [
+                /* ── Puter.js — darmowe, bez klucza, GPT-4o ── */
+                if (!window.puter) throw new Error('Puter.js nie załadował się. Odśwież stronę.');
+                const puterMsgs = [
                     { role: 'system', content: SYSTEM_PROMPT },
                     ...newMsgs.slice(0, -1),
                     { role: 'user', content: lastUserMsg }
                 ];
-                const res = await fetch('https://text.pollinations.ai/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        model: 'openai-large',
-                        messages: pollinationsMsgs,
-                        seed: Math.floor(Math.random() * 9999),
-                        private: true,
-                    }),
-                });
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                reply = await res.text();
-                // Pollinations czasem zwraca JSON, wyciągnij tekst
-                try {
-                    const j = JSON.parse(reply);
-                    reply = j.choices?.[0]?.message?.content || j.content || reply;
-                } catch {}
+                const resp = await window.puter.ai.chat(puterMsgs, { model: 'gpt-4o-mini' });
+                // puter zwraca string lub obiekt
+                if (typeof resp === 'string') {
+                    reply = resp;
+                } else {
+                    reply = resp?.message?.content?.[0]?.text
+                         || resp?.message?.content
+                         || resp?.content
+                         || JSON.stringify(resp);
+                }
             }
+
+            if (!reply || reply.trim() === '') reply = '(brak odpowiedzi — spróbuj ponownie)';
 
             // Auto-nawigacja gdy AI sugeruje URL
             const navMatch = reply.match(/NAVIGATE:\s*(https?:\/\/\S+)/);
@@ -504,7 +501,7 @@ function OpenHumanAgent() {
 
             setMessages(m => [...m, { role: 'assistant', content: reply.trim() }]);
         } catch (err) {
-            setMessages(m => [...m, { role: 'assistant', content: `❌ Błąd AI: ${err.message}\n\nSpróbuj jeszcze raz lub sprawdź połączenie z internetem.` }]);
+            setMessages(m => [...m, { role: 'assistant', content: `❌ Błąd AI: ${err.message}\n\nSpróbuj jeszcze raz lub odśwież stronę.` }]);
         } finally {
             setThinking(false);
         }
