@@ -283,6 +283,10 @@ function OpenHumanAgent() {
 
     /* Config */
     const [geminiKey, setGeminiKey]     = useState(S.get('oh_gemini_key', ''));
+    const [ollamaUrl, setOllamaUrl]     = useState(S.get('oh_ollama_url', 'https://openrouter.ai/api/v1'));
+    const [ollamaKey, setOllamaKey]     = useState(S.get('oh_ollama_key', ''));
+    const [ollamaModel, setOllamaModel] = useState(S.get('oh_ollama_model', 'nousresearch/hermes-3-llama-3.1-405b:free'));
+    const [aiProvider, setAiProvider]   = useState(S.get('oh_ai_provider', 'auto'));
     const [showSettings, setShowSettings] = useState(false);
 
     /* Layout */
@@ -315,6 +319,10 @@ function OpenHumanAgent() {
     useEffect(() => { S.set('oh_bookmarks', bookmarks); }, [bookmarks]);
     useEffect(() => { S.set('oh_history', history.slice(0, 150)); }, [history]);
     useEffect(() => { S.set('oh_user', user); }, [user]);
+    useEffect(() => { S.set('oh_ollama_url', ollamaUrl); }, [ollamaUrl]);
+    useEffect(() => { S.set('oh_ollama_key', ollamaKey); }, [ollamaKey]);
+    useEffect(() => { S.set('oh_ollama_model', ollamaModel); }, [ollamaModel]);
+    useEffect(() => { S.set('oh_ai_provider', aiProvider); }, [aiProvider]);
     useEffect(() => { messagesEnd.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, thinking]);
 
     const localLogin = (e) => {
@@ -394,7 +402,40 @@ function OpenHumanAgent() {
 
     const removeBookmark = (id, e) => { e.stopPropagation(); setBookmarks(bs => bs.filter(b => b.id !== id)); };
 
-    /* ── AI chat — działa BEZ klucza (Pollinations.ai) lub z kluczem Gemini ── */
+    /* ── Ollama-compatible API call (Ollama local / OpenRouter cloud) ── */
+    const callOllamaAPI = async (msgs, userMsg) => {
+        const baseUrl = ollamaUrl.replace(/\/$/, '');
+        const headers = { 'Content-Type': 'application/json' };
+        if (ollamaKey) headers['Authorization'] = `Bearer ${ollamaKey}`;
+        if (baseUrl.includes('openrouter.ai')) {
+            headers['HTTP-Referer'] = window.location.origin || 'https://ezofizyk.app';
+            headers['X-Title'] = 'OpenHuman Agent';
+        }
+        const body = {
+            model: ollamaModel,
+            messages: [
+                { role: 'system', content: SYSTEM_PROMPT },
+                ...msgs.slice(0, -1),
+                { role: 'user', content: userMsg }
+            ],
+            max_tokens: 2048,
+            temperature: 0.7,
+            stream: false,
+        };
+        const res = await fetch(`${baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+            const e = await res.json().catch(() => ({}));
+            throw new Error(e.error?.message || `HTTP ${res.status}: ${res.statusText}`);
+        }
+        const data = await res.json();
+        return data.choices?.[0]?.message?.content || '(brak odpowiedzi)';
+    };
+
+    /* ── AI chat — Ollama/OpenRouter, Gemini lub Puter (auto) ── */
     const sendAI = async () => {
         if (!userInput.trim() || thinking) return;
         const msg = userInput.trim();
@@ -408,8 +449,16 @@ function OpenHumanAgent() {
             const lastUserMsg = ctx + msg;
             let reply = '';
 
-            if (geminiKey) {
-                /* ── Gemini (jeśli klucz ustawiony — lepsza jakość) ── */
+            const provider = aiProvider === 'auto'
+                ? (ollamaKey || ollamaUrl.includes('localhost') ? 'ollama' : geminiKey ? 'gemini' : 'puter')
+                : aiProvider;
+
+            if (provider === 'ollama') {
+                /* ── Ollama / OpenRouter ── */
+                reply = await callOllamaAPI(newMsgs, lastUserMsg);
+
+            } else if (provider === 'gemini' && geminiKey) {
+                /* ── Gemini ── */
                 const geminiContents = newMsgs.slice(0, -1).map(m => ({
                     role: m.role === 'assistant' ? 'model' : 'user',
                     parts: [{ text: m.content }]
@@ -445,7 +494,6 @@ function OpenHumanAgent() {
                     { role: 'user', content: lastUserMsg }
                 ];
                 const resp = await window.puter.ai.chat(puterMsgs, { model: 'gpt-4o-mini' });
-                // puter zwraca string lub obiekt
                 if (typeof resp === 'string') {
                     reply = resp;
                 } else {
@@ -458,7 +506,6 @@ function OpenHumanAgent() {
 
             if (!reply || reply.trim() === '') reply = '(brak odpowiedzi — spróbuj ponownie)';
 
-            // Auto-nawigacja gdy AI sugeruje URL
             const navMatch = reply.match(/NAVIGATE:\s*(https?:\/\/\S+)/);
             if (navMatch) { navigate(navMatch[1]); setActivePanel('browser'); }
 
@@ -478,6 +525,10 @@ function OpenHumanAgent() {
 
     const saveSettings = () => {
         S.set('oh_gemini_key', geminiKey);
+        S.set('oh_ollama_url', ollamaUrl);
+        S.set('oh_ollama_key', ollamaKey);
+        S.set('oh_ollama_model', ollamaModel);
+        S.set('oh_ai_provider', aiProvider);
         setShowSettings(false);
     };
 
@@ -491,7 +542,7 @@ function OpenHumanAgent() {
     /* ══ LOGIN SCREEN ══ */
     if (showLogin) {
         const resetAll = () => {
-            ['oh_user','oh_gemini_key','oh_gci','oh_api_key','oh_bookmarks','oh_history'].forEach(k => localStorage.removeItem(k));
+            ['oh_user','oh_gemini_key','oh_gci','oh_api_key','oh_bookmarks','oh_history','oh_ollama_url','oh_ollama_key','oh_ollama_model','oh_ai_provider'].forEach(k => localStorage.removeItem(k));
             setGeminiKey('');
             window.location.reload();
         };
@@ -785,9 +836,17 @@ function OpenHumanAgent() {
                         {/* Input */}
                         <div style={{ padding:'12px 16px', borderTop:'1px solid rgba(255,255,255,0.07)' }}>
                             <div style={{ display:'flex', justifyContent:'center', marginBottom:6 }}>
-                                <span style={{ fontSize:11, padding:'3px 10px', borderRadius:20, background: geminiKey ? 'rgba(52,211,153,0.1)' : 'rgba(102,126,234,0.1)', color: geminiKey ? '#34d399' : '#a78bfa', border: `1px solid ${geminiKey ? 'rgba(52,211,153,0.25)' : 'rgba(102,126,234,0.25)'}` }}>
-                                    {geminiKey ? '✦ Gemini AI' : '✦ Pollinations AI (bezpłatny)'}
-                                </span>
+                                {(() => {
+                                    const eff = aiProvider === 'auto'
+                                        ? (ollamaKey || ollamaUrl.includes('localhost') ? 'ollama' : geminiKey ? 'gemini' : 'puter')
+                                        : aiProvider;
+                                    const cfg = {
+                                        ollama: { bg:'rgba(251,146,60,0.12)', color:'#fb923c', border:'rgba(251,146,60,0.3)', label:`✦ Ollama · ${ollamaModel.split('/').pop().replace(':free','')}` },
+                                        gemini: { bg:'rgba(52,211,153,0.1)',   color:'#34d399', border:'rgba(52,211,153,0.25)',  label:'✦ Gemini AI' },
+                                        puter:  { bg:'rgba(102,126,234,0.1)', color:'#a78bfa', border:'rgba(102,126,234,0.25)', label:'✦ Pollinations AI (bezpłatny)' },
+                                    }[eff] || {};
+                                    return <span style={{ fontSize:11, padding:'3px 10px', borderRadius:20, background:cfg.bg, color:cfg.color, border:`1px solid ${cfg.border}` }}>{cfg.label}</span>;
+                                })()}
                             </div>
                             <div style={{ display:'flex', gap:'10px', alignItems:'flex-end', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'14px', padding:'10px 12px' }}>
                                 <textarea
@@ -808,7 +867,9 @@ function OpenHumanAgent() {
                                 </button>
                             </div>
                             <p style={{ fontSize:10, color:'#374151', textAlign:'center', marginTop:6 }}>
-                                {geminiKey ? 'Powered by Google Gemini' : 'Powered by Pollinations.ai · Bezpłatny · Bez rejestracji'}
+                                {aiProvider==='ollama' || (aiProvider==='auto' && (ollamaKey || ollamaUrl.includes('localhost')))
+                                    ? `Powered by Ollama · ${ollamaUrl.includes('openrouter') ? 'OpenRouter Cloud' : ollamaUrl}`
+                                    : geminiKey ? 'Powered by Google Gemini' : 'Powered by Pollinations.ai · Bezpłatny · Bez rejestracji'}
                             </p>
                         </div>
                     </div>
@@ -826,20 +887,122 @@ function OpenHumanAgent() {
 
                         <div style={{ display:'flex', flexDirection:'column', gap:'22px' }}>
 
-                            {/* Status AI */}
-                            <div style={{ padding:'12px 14px', borderRadius:10, background: geminiKey ? 'rgba(52,211,153,0.07)' : 'rgba(102,126,234,0.07)', border: `1px solid ${geminiKey ? 'rgba(52,211,153,0.2)' : 'rgba(102,126,234,0.2)'}` }}>
-                                <p style={{ fontSize:13, fontWeight:600, color: geminiKey ? '#34d399' : '#a78bfa', marginBottom:4 }}>
-                                    {geminiKey ? '✅ Gemini AI aktywny' : '✅ AI działa — Pollinations (bez klucza)'}
-                                </p>
-                                <p style={{ fontSize:11, color:'#6b7280' }}>
-                                    {geminiKey ? 'Używasz Google Gemini 1.5 Flash.' : 'AI działa natychmiast, bez żadnej konfiguracji. Opcjonalnie możesz dodać klucz Gemini poniżej dla lepszej jakości.'}
-                                </p>
+                            {/* Provider selector */}
+                            <div>
+                                <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#d1d5db', marginBottom:8 }}>🔌 Provider AI</label>
+                                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                                    {[
+                                        { id:'auto',   label:'Auto (zalecane)',   desc:'Automatyczny dobór — Ollama > Gemini > Puter' },
+                                        { id:'ollama', label:'Ollama / OpenRouter', desc:'Darmowy cloud lub lokalny Ollama' },
+                                        { id:'gemini', label:'Google Gemini',       desc:'Wymaga klucza API' },
+                                        { id:'puter',  label:'Pollinations (GPT-4o)', desc:'Bez klucza, przez Puter.js' },
+                                    ].map(p => (
+                                        <label key={p.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:10, cursor:'pointer', background: aiProvider===p.id ? 'rgba(102,126,234,0.12)' : 'rgba(255,255,255,0.03)', border:`1px solid ${aiProvider===p.id ? 'rgba(102,126,234,0.4)' : 'rgba(255,255,255,0.08)'}`, transition:'all 0.15s' }}>
+                                            <input type="radio" name="provider" value={p.id} checked={aiProvider===p.id} onChange={()=>setAiProvider(p.id)} style={{ accentColor:'#667eea' }} />
+                                            <div>
+                                                <p style={{ fontSize:13, fontWeight:500, color:'#e2e8f0' }}>{p.label}</p>
+                                                <p style={{ fontSize:11, color:'#6b7280' }}>{p.desc}</p>
+                                            </div>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Ollama / OpenRouter config */}
+                            <div style={{ padding:'16px', borderRadius:12, background:'rgba(251,146,60,0.05)', border:'1px solid rgba(251,146,60,0.2)' }}>
+                                <p style={{ fontSize:13, fontWeight:600, color:'#fb923c', marginBottom:12 }}>🦙 Ollama / OpenRouter Cloud</p>
+
+                                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                                    <div>
+                                        <label style={{ fontSize:12, color:'#9ca3af', display:'block', marginBottom:4 }}>Base URL (API endpoint)</label>
+                                        <input
+                                            type="text"
+                                            value={ollamaUrl}
+                                            onChange={e => setOllamaUrl(e.target.value)}
+                                            className="form-input"
+                                            placeholder="https://openrouter.ai/api/v1"
+                                            style={{ fontSize:12 }}
+                                        />
+                                        <div style={{ display:'flex', gap:6, marginTop:5, flexWrap:'wrap' }}>
+                                            {[
+                                                { label:'OpenRouter (cloud)', url:'https://openrouter.ai/api/v1' },
+                                                { label:'Lokalny Ollama',     url:'http://localhost:11434/v1'    },
+                                                { label:'Groq Cloud',         url:'https://api.groq.com/openai/v1' },
+                                            ].map(q => (
+                                                <button key={q.url} onClick={()=>setOllamaUrl(q.url)}
+                                                    style={{ fontSize:10, padding:'3px 8px', borderRadius:6, border:'1px solid rgba(255,255,255,0.12)', background: ollamaUrl===q.url ? 'rgba(102,126,234,0.2)' : 'rgba(255,255,255,0.04)', color: ollamaUrl===q.url ? '#a78bfa' : '#6b7280', cursor:'pointer' }}>
+                                                    {q.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label style={{ fontSize:12, color:'#9ca3af', display:'block', marginBottom:4 }}>
+                                            {I.key} API Key <span style={{ color:'#4b5563' }}>(puste = lokalny Ollama bez auth)</span>
+                                        </label>
+                                        <input
+                                            type="password"
+                                            value={ollamaKey}
+                                            onChange={e => setOllamaKey(e.target.value)}
+                                            className="form-input"
+                                            placeholder="sk-or-... (OpenRouter) / gsk_... (Groq)"
+                                            style={{ fontSize:12 }}
+                                        />
+                                        <p style={{ fontSize:10, color:'#4b5563', marginTop:4 }}>
+                                            Darmowy klucz OpenRouter: <span style={{ color:'#fb923c' }}>openrouter.ai/keys</span>
+                                            &nbsp;· Groq: <span style={{ color:'#fb923c' }}>console.groq.com</span>
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <label style={{ fontSize:12, color:'#9ca3af', display:'block', marginBottom:4 }}>Model</label>
+                                        <select
+                                            value={ollamaModel}
+                                            onChange={e => setOllamaModel(e.target.value)}
+                                            className="form-input"
+                                            style={{ fontSize:12 }}
+                                        >
+                                            <optgroup label="🆓 Darmowe — OpenRouter">
+                                                <option value="nousresearch/hermes-3-llama-3.1-405b:free">Hermes 3 · Llama 3.1 405B (NousResearch) ⭐</option>
+                                                <option value="nousresearch/hermes-3-llama-3.1-70b:free">Hermes 3 · Llama 3.1 70B (NousResearch)</option>
+                                                <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 · 70B Instruct (Meta)</option>
+                                                <option value="meta-llama/llama-3.1-8b-instruct:free">Llama 3.1 · 8B Instruct (szybki)</option>
+                                                <option value="deepseek/deepseek-r1:free">DeepSeek R1 (rozumowanie)</option>
+                                                <option value="qwen/qwen3-235b-a22b:free">Qwen3 · 235B (Alibaba)</option>
+                                                <option value="mistralai/mistral-7b-instruct:free">Mistral 7B Instruct</option>
+                                                <option value="google/gemma-3-27b-it:free">Gemma 3 · 27B (Google)</option>
+                                            </optgroup>
+                                            <optgroup label="⚡ Groq (wymaga klucza Groq)">
+                                                <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Groq · szybki)</option>
+                                                <option value="llama-3.1-8b-instant">Llama 3.1 8B (Groq · błyskawiczny)</option>
+                                                <option value="mixtral-8x7b-32768">Mixtral 8x7B (Groq)</option>
+                                            </optgroup>
+                                            <optgroup label="🏠 Lokalny Ollama">
+                                                <option value="llama3.3">llama3.3</option>
+                                                <option value="hermes3">hermes3</option>
+                                                <option value="mistral">mistral</option>
+                                                <option value="phi4">phi4</option>
+                                                <option value="gemma3">gemma3</option>
+                                                <option value="qwen2.5">qwen2.5</option>
+                                            </optgroup>
+                                        </select>
+                                        <input
+                                            type="text"
+                                            value={ollamaModel}
+                                            onChange={e => setOllamaModel(e.target.value)}
+                                            className="form-input"
+                                            placeholder="Lub wpisz własną nazwę modelu..."
+                                            style={{ fontSize:11, marginTop:5, color:'#9ca3af' }}
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Gemini key — opcjonalny */}
                             <div>
                                 <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, fontWeight:500, color:'#d1d5db', marginBottom:8 }}>
-                                    {I.key} Klucz Gemini API <span style={{ color:'#6b7280', fontSize:11 }}>(opcjonalny — lepsza jakość)</span>
+                                    {I.key} Klucz Gemini API <span style={{ color:'#6b7280', fontSize:11 }}>(opcjonalny)</span>
                                 </label>
                                 <input
                                     type="password"
