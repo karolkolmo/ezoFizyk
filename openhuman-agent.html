@@ -841,7 +841,7 @@ function OpenHumanAgent() {
                                         ? (ollamaKey || ollamaUrl.includes('localhost') ? 'ollama' : geminiKey ? 'gemini' : 'puter')
                                         : aiProvider;
                                     const cfg = {
-                                        ollama: { bg:'rgba(251,146,60,0.12)', color:'#fb923c', border:'rgba(251,146,60,0.3)', label:`✦ Ollama · ${ollamaModel.split('/').pop().replace(':free','')}` },
+                                        ollama: { bg:'rgba(52,211,153,0.1)', color:'#34d399', border:'rgba(52,211,153,0.25)', label:`✦ ${ollamaUrl.includes('groq') ? 'Groq' : 'OpenRouter'} · ${ollamaModel.split('/').pop().replace(':free','')} 🆓` },
                                         gemini: { bg:'rgba(52,211,153,0.1)',   color:'#34d399', border:'rgba(52,211,153,0.25)',  label:'✦ Gemini AI' },
                                         puter:  { bg:'rgba(102,126,234,0.1)', color:'#a78bfa', border:'rgba(102,126,234,0.25)', label:'✦ Pollinations AI (bezpłatny)' },
                                     }[eff] || {};
@@ -868,8 +868,8 @@ function OpenHumanAgent() {
                             </div>
                             <p style={{ fontSize:10, color:'#374151', textAlign:'center', marginTop:6 }}>
                                 {aiProvider==='ollama' || (aiProvider==='auto' && (ollamaKey || ollamaUrl.includes('localhost')))
-                                    ? `Powered by Ollama · ${ollamaUrl.includes('openrouter') ? 'OpenRouter Cloud' : ollamaUrl}`
-                                    : geminiKey ? 'Powered by Google Gemini' : 'Powered by Pollinations.ai · Bezpłatny · Bez rejestracji'}
+                                    ? `Powered by ${ollamaUrl.includes('openrouter') ? 'OpenRouter (darmowy)' : ollamaUrl.includes('groq') ? 'Groq (darmowy)' : ollamaUrl}`
+                                    : geminiKey ? 'Powered by Google Gemini (darmowy)' : 'Powered by Pollinations.ai · Bezpłatny · Bez rejestracji'}
                             </p>
                         </div>
                     </div>
@@ -892,10 +892,10 @@ function OpenHumanAgent() {
                                 <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#d1d5db', marginBottom:8 }}>🔌 Provider AI</label>
                                 <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
                                     {[
-                                        { id:'auto',   label:'Auto (zalecane)',   desc:'Automatyczny dobór — Ollama > Gemini > Puter' },
-                                        { id:'ollama', label:'Ollama / OpenRouter', desc:'Darmowy cloud lub lokalny Ollama' },
-                                        { id:'gemini', label:'Google Gemini',       desc:'Wymaga klucza API' },
-                                        { id:'puter',  label:'Pollinations (GPT-4o)', desc:'Bez klucza, przez Puter.js' },
+                                        { id:'auto',   label:'Auto (zalecane)',            desc:'Automatyczny dobór — OpenRouter > Gemini > Puter' },
+                                        { id:'ollama', label:'🆓 OpenRouter / Groq (darmowe)', desc:'Darmowe API w chmurze — modele Hermes, Llama, DeepSeek i inne' },
+                                        { id:'gemini', label:'Google Gemini',               desc:'Darmowy klucz na aistudio.google.com' },
+                                        { id:'puter',  label:'Pollinations (GPT-4o)',        desc:'Bez klucza, przez Puter.js — zawsze darmowy' },
                                     ].map(p => (
                                         <label key={p.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:10, cursor:'pointer', background: aiProvider===p.id ? 'rgba(102,126,234,0.12)' : 'rgba(255,255,255,0.03)', border:`1px solid ${aiProvider===p.id ? 'rgba(102,126,234,0.4)' : 'rgba(255,255,255,0.08)'}`, transition:'all 0.15s' }}>
                                             <input type="radio" name="provider" value={p.id} checked={aiProvider===p.id} onChange={()=>setAiProvider(p.id)} style={{ accentColor:'#667eea' }} />
@@ -908,9 +908,12 @@ function OpenHumanAgent() {
                                 </div>
                             </div>
 
-                            {/* Ollama / OpenRouter config */}
-                            <div style={{ padding:'16px', borderRadius:12, background:'rgba(251,146,60,0.05)', border:'1px solid rgba(251,146,60,0.2)' }}>
-                                <p style={{ fontSize:13, fontWeight:600, color:'#fb923c', marginBottom:12 }}>🦙 Ollama / OpenRouter Cloud</p>
+                            {/* OpenRouter / Groq config */}
+                            <div style={{ padding:'16px', borderRadius:12, background:'rgba(52,211,153,0.04)', border:'1px solid rgba(52,211,153,0.18)' }}>
+                                <div style={{ marginBottom:10 }}>
+                                    <p style={{ fontSize:13, fontWeight:600, color:'#34d399', marginBottom:2 }}>🆓 Darmowy Cloud API (OpenRouter / Groq)</p>
+                                    <p style={{ fontSize:11, color:'#6b7280' }}>Ollama to narzędzie <strong style={{color:'#9ca3af'}}>lokalne</strong> — wymaga własnego komputera z GPU. Darmowe cloud API to OpenRouter i Groq.</p>
+                                </div>
 
                                 <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
                                     <div>
@@ -925,9 +928,9 @@ function OpenHumanAgent() {
                                         />
                                         <div style={{ display:'flex', gap:6, marginTop:5, flexWrap:'wrap' }}>
                                             {[
-                                                { label:'OpenRouter (cloud)', url:'https://openrouter.ai/api/v1' },
-                                                { label:'Lokalny Ollama',     url:'http://localhost:11434/v1'    },
-                                                { label:'Groq Cloud',         url:'https://api.groq.com/openai/v1' },
+                                                { label:'🆓 OpenRouter',         url:'https://openrouter.ai/api/v1'   },
+                                                { label:'🆓 Groq Cloud',          url:'https://api.groq.com/openai/v1' },
+                                                { label:'🏠 Ollama (localhost)',   url:'http://localhost:11434/v1'      },
                                             ].map(q => (
                                                 <button key={q.url} onClick={()=>setOllamaUrl(q.url)}
                                                     style={{ fontSize:10, padding:'3px 8px', borderRadius:6, border:'1px solid rgba(255,255,255,0.12)', background: ollamaUrl===q.url ? 'rgba(102,126,234,0.2)' : 'rgba(255,255,255,0.04)', color: ollamaUrl===q.url ? '#a78bfa' : '#6b7280', cursor:'pointer' }}>
