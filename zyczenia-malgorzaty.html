@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Życzenia Urodzinowe dla Cesarzowej Małgorzaty</title>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            background: #1a0a0a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            font-family: 'Cormorant Garamond', serif;
+        }
+
+        .card {
+            position: relative;
+            width: min(680px, 100%);
+            background: linear-gradient(160deg, #fdf6e3 0%, #f9edcc 40%, #fef3dc 70%, #fdf0d0 100%);
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow:
+                0 0 0 3px #8b1a1a,
+                0 0 0 6px #c8a84b,
+                0 0 0 9px #8b1a1a,
+                0 30px 80px rgba(0,0,0,0.6);
+        }
+
+        /* Gold shimmer overlay */
+        .card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(255,230,100,0.18) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Floral corner decorations */
+        .flowers-top, .flowers-bottom {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            line-height: 0;
+        }
+
+        .flowers-top { height: 200px; }
+        .flowers-bottom { height: 180px; }
+
+        .flower {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.92;
+        }
+
+        /* Top floral arrangement */
+        /* Large pink peony TL */
+        .f1  { width:150px;height:150px; top:-20px; left:-20px; background: radial-gradient(circle at 40% 40%, #ffb7c5, #e07090, #c0405a); }
+        /* Dark red rose TL */
+        .f2  { width:90px;height:90px; top:30px; left:70px; background: radial-gradient(circle at 35% 35%, #e05060, #8b1020, #6a0010); }
+        /* Cream rose TL */
+        .f3  { width:80px;height:80px; top:80px; left:10px; background: radial-gradient(circle at 40% 40%, #fff8ec, #f5d9a0, #e8c070); }
+        /* Pink lily center-left */
+        .f4  { width:110px;height:110px; top:10px; left:150px; background: radial-gradient(circle at 40% 30%, #ffcce0, #f090b0, #e06090); }
+        /* White lily center-left */
+        .f5  { width:100px;height:100px; top:100px; left:100px; background: radial-gradient(circle at 50% 40%, #fffdf5, #f5e8c0, #e8d090); }
+
+        /* Large pink peony TR */
+        .f6  { width:140px;height:140px; top:-15px; right:-15px; background: radial-gradient(circle at 55% 40%, #ffb7c5, #e07090, #c0405a); }
+        /* Dark red rose TR */
+        .f7  { width:85px;height:85px; top:40px; right:65px; background: radial-gradient(circle at 60% 35%, #cc3040, #8b0010, #600005); }
+        /* Pink rose TR */
+        .f8  { width:90px;height:90px; top:10px; right:120px; background: radial-gradient(circle at 45% 40%, #ffaac0, #e06080, #c04060); }
+        /* Lily TR */
+        .f9  { width:75px;height:75px; top:90px; right:20px; background: radial-gradient(circle at 50% 45%, #ffe8f0, #f0a8c0, #e07898); }
+        /* Cream rose TR inner */
+        .f10 { width:70px;height:70px; top:130px; right:110px; background: radial-gradient(circle at 40% 40%, #fff5e0, #f0d080, #d8b050); }
+
+        /* Center top rose */
+        .f11 { width:60px;height:60px; top:0; left:50%; transform:translateX(-50%); background: radial-gradient(circle at 40% 40%, #cc2030, #8b0000, #600000); }
+
+        /* Bottom flowers */
+        .f12 { width:130px;height:130px; bottom:-10px; left:-10px; background: radial-gradient(circle at 40% 55%, #ffb0c0, #e06080, #c03050); }
+        .f13 { width:100px;height:100px; bottom:20px; left:80px; background: radial-gradient(circle at 35% 35%, #cc2030, #8b0000, #6a0010); }
+        .f14 { width:85px;height:85px;  bottom:60px; left:20px; background: radial-gradient(circle at 50% 45%, #ffcce0, #f090b0, #e06090); }
+        .f15 { width:90px;height:90px;  bottom:-5px;  left:160px; background: radial-gradient(circle at 40% 40%, #d02040, #900010, #680005); }
+        .f16 { width:120px;height:120px; bottom:-10px; right:-10px; background: radial-gradient(circle at 55% 45%, #ffb8c8, #e07090, #c04060); }
+        .f17 { width:90px;height:90px;  bottom:20px; right:80px; background: radial-gradient(circle at 50% 40%, #fff0e8, #f0d090, #d8a860); }
+        .f18 { width:80px;height:80px;  bottom:70px; right:15px; background: radial-gradient(circle at 40% 45%, #ffccdc, #f090b0, #e06090); }
+        .f19 { width:70px;height:70px;  bottom:10px; right:155px; background: radial-gradient(circle at 45% 40%, #dd3050, #900020, #6e0010); }
+
+        /* Leaves / greenery */
+        .leaf {
+            position: absolute;
+            border-radius: 50% 10% 50% 10%;
+            opacity: 0.7;
+        }
+        .l1 { width:80px;height:35px; top:50px; left:35px; background:#2d6a2d; transform:rotate(-30deg); }
+        .l2 { width:60px;height:25px; top:80px; left:160px; background:#3a7a3a; transform:rotate(20deg); }
+        .l3 { width:70px;height:30px; top:60px; right:40px; background:#2d6a2d; transform:rotate(40deg); }
+        .l4 { width:55px;height:22px; top:100px; right:130px; background:#3a7a3a; transform:rotate(-15deg); }
+        .l5 { width:65px;height:28px; bottom:50px; left:60px; background:#2d6a2d; transform:rotate(25deg); }
+        .l6 { width:60px;height:25px; bottom:80px; right:50px; background:#3a7a3a; transform:rotate(-35deg); }
+
+        /* Small accent flowers */
+        .sm { width:18px;height:18px; }
+        .sf1 { top:140px; left:200px; background:#cc4060; }
+        .sf2 { top:155px; left:220px; background:#dd6080; }
+        .sf3 { top:140px; right:200px; background:#cc4060; }
+        .sf4 { top:155px; right:220px; background:#dd6080; }
+
+        .content-area {
+            position: relative;
+            z-index: 2;
+            padding: 0 40px 30px;
+            text-align: center;
+        }
+
+        /* Gold ornament top */
+        .ornament-top {
+            text-align: center;
+            font-size: 28px;
+            color: #c8a84b;
+            margin-bottom: 8px;
+            text-shadow: 0 1px 3px rgba(139,90,20,0.4);
+            letter-spacing: 4px;
+        }
+
+        .title-serdeczne {
+            font-family: 'Great Vibes', cursive;
+            font-size: clamp(2.8rem, 8vw, 4.2rem);
+            color: #6b0a18;
+            line-height: 1.1;
+            text-shadow: 2px 2px 6px rgba(107,10,24,0.25);
+            margin-bottom: 2px;
+        }
+
+        .title-zyczenia {
+            font-family: 'Great Vibes', cursive;
+            font-size: clamp(3rem, 9vw, 4.8rem);
+            color: #6b0a18;
+            line-height: 1.05;
+            text-shadow: 2px 2px 8px rgba(107,10,24,0.25);
+            margin-bottom: 4px;
+        }
+
+        .title-urodzinowe {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.3rem, 4vw, 1.9rem);
+            font-weight: 700;
+            color: #6b0a18;
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+        }
+
+        .title-dla-mojej {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: clamp(1rem, 3vw, 1.35rem);
+            color: #6b0a18;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .title-cesarzowej {
+            font-family: 'Great Vibes', cursive;
+            font-size: clamp(2.5rem, 7vw, 3.8rem);
+            color: #6b0a18;
+            line-height: 1.1;
+            text-shadow: 2px 2px 6px rgba(107,10,24,0.2);
+            margin-bottom: 2px;
+        }
+
+        .title-malgorzaty {
+            font-family: 'Great Vibes', cursive;
+            font-size: clamp(3.2rem, 9.5vw, 5.5rem);
+            color: #6b0a18;
+            line-height: 1.0;
+            text-shadow: 2px 2px 8px rgba(107,10,24,0.25);
+            margin-bottom: 12px;
+        }
+
+        /* Gold ornament divider */
+        .ornament-divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 10px 0 14px;
+            color: #c8a84b;
+        }
+
+        .ornament-divider .line {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #c8a84b, transparent);
+        }
+
+        .ornament-divider .heart {
+            font-size: 22px;
+            color: #9b1a2a;
+            filter: drop-shadow(0 1px 3px rgba(139,90,20,0.5));
+        }
+
+        .title-od {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: clamp(1rem, 3vw, 1.3rem);
+            color: #6b0a18;
+            margin-bottom: 4px;
+        }
+
+        .title-wielbiciela {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: clamp(1.1rem, 3.5vw, 1.55rem);
+            color: #6b0a18;
+            letter-spacing: 1px;
+            line-height: 1.4;
+            margin-bottom: 16px;
+        }
+
+        /* Car section */
+        .car-section {
+            position: relative;
+            margin: 0 -40px;
+            height: 220px;
+            overflow: hidden;
+        }
+
+        .car-svg {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            max-width: 520px;
+        }
+
+        /* Ground shadow */
+        .car-section::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 10%;
+            right: 10%;
+            height: 30px;
+            background: radial-gradient(ellipse, rgba(0,0,0,0.3) 0%, transparent 70%);
+        }
+
+        /* Sparkle stars */
+        .sparkle {
+            position: absolute;
+            pointer-events: none;
+        }
+
+        .sparkle::before, .sparkle::after {
+            content: '✦';
+            position: absolute;
+            color: #c8a84b;
+            opacity: 0.6;
+            animation: sparkle 2s ease-in-out infinite;
+        }
+
+        @keyframes sparkle {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 0.9; transform: scale(1.2); }
+        }
+
+        /* Particle dots on background */
+        .bg-glow {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(255,200,150,0.15) 0%, transparent 40%),
+                radial-gradient(circle at 80% 50%, rgba(255,200,150,0.12) 0%, transparent 40%);
+            pointer-events: none;
+        }
+
+        @media (max-width: 480px) {
+            .content-area { padding: 0 24px 20px; }
+            .car-section { margin: 0 -24px; height: 160px; }
+            .flowers-top { height: 150px; }
+            .flowers-bottom { height: 130px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="bg-glow"></div>
+
+    <!-- TOP FLOWERS -->
+    <div class="flowers-top">
+        <div class="flower f1"></div>
+        <div class="flower f2"></div>
+        <div class="flower f3"></div>
+        <div class="flower f4"></div>
+        <div class="flower f5"></div>
+        <div class="flower f6"></div>
+        <div class="flower f7"></div>
+        <div class="flower f8"></div>
+        <div class="flower f9"></div>
+        <div class="flower f10"></div>
+        <div class="flower f11"></div>
+        <div class="leaf l1"></div>
+        <div class="leaf l2"></div>
+        <div class="leaf l3"></div>
+        <div class="leaf l4"></div>
+        <div class="flower sm sf1"></div>
+        <div class="flower sm sf2"></div>
+        <div class="flower sm sf3"></div>
+        <div class="flower sm sf4"></div>
+    </div>
+
+    <!-- MAIN TEXT -->
+    <div class="content-area">
+        <div class="ornament-top">❧ ✦ ❧</div>
+
+        <div class="title-serdeczne">Serdeczne</div>
+        <div class="title-zyczenia">Życzenia</div>
+        <div class="title-urodzinowe">urodzinowe</div>
+        <div class="title-dla-mojej">dla mojej</div>
+        <div class="title-cesarzowej">Cesarzowej</div>
+        <div class="title-malgorzaty">Małgorzaty</div>
+
+        <div class="ornament-divider">
+            <span class="line"></span>
+            <span class="heart">♥</span>
+            <span class="line"></span>
+        </div>
+
+        <div class="title-od">od swojego</div>
+        <div class="title-wielbiciela">
+            Wielbiciela Karmicznego<br>Antoniego
+        </div>
+    </div>
+
+    <!-- CAR (SVG Bugatti-style silhouette) -->
+    <div class="car-section">
+        <svg class="car-svg" viewBox="0 0 600 220" xmlns="http://www.w3.org/2000/svg">
+            <!-- Ground / road -->
+            <rect x="0" y="185" width="600" height="35" fill="#3a2a1a" rx="4"/>
+            <rect x="0" y="183" width="600" height="4" fill="#4a3a2a"/>
+
+            <!-- Car body shadow -->
+            <ellipse cx="300" cy="195" rx="220" ry="14" fill="rgba(0,0,0,0.35)"/>
+
+            <!-- Main body - dark navy blue Bugatti Chiron shape -->
+            <!-- Underbody / skirt -->
+            <path d="M 60 175 L 70 160 L 530 160 L 540 175 Z" fill="#0a1828"/>
+
+            <!-- Side body -->
+            <path d="M 55 175 C 55 155, 80 130, 120 118
+                     L 180 110 L 240 105 L 320 105 L 380 108
+                     L 450 115 L 500 128 L 535 148 L 545 175 Z"
+                  fill="#0d1f38"/>
+
+            <!-- Body highlight stripe -->
+            <path d="M 120 118 C 180 112, 260 107, 340 107 L 380 108 L 450 115 L 120 118 Z"
+                  fill="#122a4a" opacity="0.6"/>
+
+            <!-- Roof / cabin -->
+            <path d="M 180 110 C 195 85, 215 72, 250 68
+                     L 310 66 L 370 70 L 400 80 L 420 100 L 380 108 Z"
+                  fill="#101c2e"/>
+
+            <!-- Windshield -->
+            <path d="M 195 106 C 208 84, 225 72, 252 70
+                     L 308 68 L 340 72 L 370 84 L 378 104 Z"
+                  fill="#1a3a5a" opacity="0.85"/>
+            <line x1="285" y1="68" x2="285" y2="104" stroke="#0d2a3a" stroke-width="2" opacity="0.5"/>
+
+            <!-- Rear window -->
+            <path d="M 378 104 L 370 84 L 395 92 L 415 104 Z"
+                  fill="#1a3a5a" opacity="0.6"/>
+
+            <!-- Car roof chrome line -->
+            <path d="M 185 106 C 200 82, 220 70, 252 68 L 370 70 L 380 80"
+                  stroke="#2a5a8a" stroke-width="1.5" fill="none" opacity="0.7"/>
+
+            <!-- Front bumper / nose (Bugatti horseshoe) -->
+            <path d="M 55 175 L 65 158 L 80 140 L 90 130 L 110 122 L 120 118 L 55 175 Z"
+                  fill="#0a1828"/>
+            <!-- Horseshoe grille -->
+            <path d="M 68 160 C 64 148, 68 136, 78 128 L 90 122 L 95 126
+                     C 86 133, 82 143, 84 154 Z"
+                  fill="#0d2540" stroke="#1a4a70" stroke-width="1"/>
+            <path d="M 70 158 C 67 148, 71 138, 79 131 L 88 126"
+                  stroke="#2a6a9a" stroke-width="1.5" fill="none" opacity="0.8"/>
+
+            <!-- Front grille slots -->
+            <rect x="88" y="136" width="22" height="4" rx="2" fill="#0a1828"/>
+            <rect x="88" y="143" width="18" height="3" rx="1.5" fill="#0a1828"/>
+            <rect x="88" y="149" width="14" height="3" rx="1.5" fill="#0a1828"/>
+
+            <!-- Bugatti logo area (front) -->
+            <ellipse cx="115" cy="138" rx="8" ry="5" fill="#c8a84b" opacity="0.9"/>
+            <text x="115" y="141" text-anchor="middle" font-size="5" fill="#8b1a1a" font-family="serif" font-weight="bold">B</text>
+
+            <!-- Headlights (quad) -->
+            <rect x="92" y="155" width="10" height="5" rx="1" fill="#d0e8ff" opacity="0.9"/>
+            <rect x="105" y="155" width="10" height="5" rx="1" fill="#d0e8ff" opacity="0.9"/>
+            <rect x="92" y="162" width="10" height="4" rx="1" fill="#e0f0ff" opacity="0.8"/>
+            <rect x="105" y="162" width="10" height="4" rx="1" fill="#e0f0ff" opacity="0.8"/>
+            <!-- Headlight glow -->
+            <rect x="91" y="154" width="26" height="15" rx="2" fill="rgba(200,230,255,0.15)"/>
+
+            <!-- Side air intakes -->
+            <path d="M 380 120 C 400 118, 430 122, 450 128 L 450 135 C 430 130, 400 127, 380 130 Z"
+                  fill="#081018" stroke="#1a3a5a" stroke-width="0.5"/>
+            <path d="M 385 123 L 445 130" stroke="#0d2a40" stroke-width="1.5"/>
+            <path d="M 385 127 L 445 134" stroke="#0d2a40" stroke-width="1"/>
+
+            <!-- Front fender scoop -->
+            <path d="M 130 130 L 155 125 L 160 132 L 135 137 Z" fill="#081018" stroke="#1a3a5a" stroke-width="0.5"/>
+
+            <!-- Rear -->
+            <path d="M 530 160 L 545 175 L 535 175 L 520 165 Z" fill="#0a1828"/>
+            <!-- Rear lights -->
+            <rect x="515" y="148" width="20" height="8" rx="2" fill="#cc2020" opacity="0.9"/>
+            <rect x="516" y="149" width="18" height="6" rx="1" fill="#ff4040" opacity="0.7"/>
+            <!-- Rear diffuser -->
+            <path d="M 490 170 L 545 170 L 545 175 L 490 175 Z" fill="#040c18"/>
+            <line x1="500" y1="170" x2="500" y2="175" stroke="#0d2030" stroke-width="2"/>
+            <line x1="512" y1="170" x2="512" y2="175" stroke="#0d2030" stroke-width="2"/>
+            <line x1="524" y1="170" x2="524" y2="175" stroke="#0d2030" stroke-width="2"/>
+            <line x1="536" y1="170" x2="536" y2="175" stroke="#0d2030" stroke-width="2"/>
+
+            <!-- Silver trim line along body -->
+            <path d="M 90 130 C 150 118, 240 110, 320 108 L 440 112 L 500 130"
+                  stroke="#c0c8d8" stroke-width="1.5" fill="none" opacity="0.5"/>
+
+            <!-- Blue accent line (Chiron signature) -->
+            <path d="M 120 155 L 490 155" stroke="#1a4a8a" stroke-width="3" opacity="0.4"/>
+            <path d="M 120 155 L 490 155" stroke="#3a8aff" stroke-width="1" opacity="0.5"/>
+
+            <!-- FRONT WHEEL -->
+            <circle cx="158" cy="178" r="32" fill="#0f0f0f"/>
+            <circle cx="158" cy="178" r="28" fill="#1a1a1a"/>
+            <!-- Rim -->
+            <circle cx="158" cy="178" r="22" fill="#1e2530"/>
+            <circle cx="158" cy="178" r="18" fill="#253040"/>
+            <!-- Spokes -->
+            <line x1="158" y1="160" x2="158" y2="196" stroke="#7a8898" stroke-width="3"/>
+            <line x1="140" y1="178" x2="176" y2="178" stroke="#7a8898" stroke-width="3"/>
+            <line x1="145" y1="165" x2="171" y2="191" stroke="#7a8898" stroke-width="2.5"/>
+            <line x1="171" y1="165" x2="145" y2="191" stroke="#7a8898" stroke-width="2.5"/>
+            <line x1="146" y1="170" x2="170" y2="186" stroke="#5a6878" stroke-width="1.5"/>
+            <line x1="170" y1="170" x2="146" y2="186" stroke="#5a6878" stroke-width="1.5"/>
+            <!-- Center cap -->
+            <circle cx="158" cy="178" r="7" fill="#c8a84b"/>
+            <circle cx="158" cy="178" r="4" fill="#8b7020"/>
+            <!-- Caliper (blue - Bugatti) -->
+            <path d="M 138 168 L 144 162 L 148 166 L 142 172 Z" fill="#1a50c8" opacity="0.9"/>
+            <!-- Tire highlight -->
+            <path d="M 130 162 C 128 170, 132 182, 142 188" stroke="#2a2a2a" stroke-width="3" fill="none"/>
+
+            <!-- REAR WHEEL -->
+            <circle cx="442" cy="178" r="34" fill="#0f0f0f"/>
+            <circle cx="442" cy="178" r="30" fill="#1a1a1a"/>
+            <circle cx="442" cy="178" r="23" fill="#1e2530"/>
+            <circle cx="442" cy="178" r="19" fill="#253040"/>
+            <line x1="442" y1="159" x2="442" y2="197" stroke="#7a8898" stroke-width="3"/>
+            <line x1="423" y1="178" x2="461" y2="178" stroke="#7a8898" stroke-width="3"/>
+            <line x1="429" y1="165" x2="455" y2="191" stroke="#7a8898" stroke-width="2.5"/>
+            <line x1="455" y1="165" x2="429" y2="191" stroke="#7a8898" stroke-width="2.5"/>
+            <line x1="430" y1="170" x2="454" y2="186" stroke="#5a6878" stroke-width="1.5"/>
+            <line x1="454" y1="170" x2="430" y2="186" stroke="#5a6878" stroke-width="1.5"/>
+            <circle cx="442" cy="178" r="7" fill="#c8a84b"/>
+            <circle cx="442" cy="178" r="4" fill="#8b7020"/>
+            <path d="M 422 168 L 428 162 L 432 166 L 426 172 Z" fill="#1a50c8" opacity="0.9"/>
+            <path d="M 414 162 C 412 170, 416 182, 426 188" stroke="#2a2a2a" stroke-width="3" fill="none"/>
+
+            <!-- Bugatti logo on side door -->
+            <text x="285" y="148" text-anchor="middle" font-size="9" fill="#c8a84b" font-family="serif" font-weight="bold" opacity="0.7">BUGATTI</text>
+        </svg>
+    </div>
+
+    <!-- BOTTOM FLOWERS -->
+    <div class="flowers-bottom" style="position:relative;">
+        <div class="flower f12"></div>
+        <div class="flower f13"></div>
+        <div class="flower f14"></div>
+        <div class="flower f15"></div>
+        <div class="flower f16"></div>
+        <div class="flower f17"></div>
+        <div class="flower f18"></div>
+        <div class="flower f19"></div>
+        <div class="leaf l5"></div>
+        <div class="leaf l6"></div>
+    </div>
+</div>
+
+</body>
+</html>
